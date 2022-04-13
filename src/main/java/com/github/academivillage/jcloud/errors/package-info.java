@@ -1,6 +1,6 @@
 @NonNullApi
 @NonNullFields
-package com.github.academivillage.jcloud.gcp.appengine.standard.java8;
+package com.github.academivillage.jcloud.errors;
 
 import org.springframework.lang.NonNullApi;
 import org.springframework.lang.NonNullFields;

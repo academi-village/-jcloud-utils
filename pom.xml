@@ -23,13 +23,22 @@
 
 	<dependencies>
 
-		<!-- appengine -->
+		<!-- App Engine -->
 		<dependency>
 			<groupId>com.google.appengine.tools</groupId>
 			<artifactId>appengine-gcs-client</artifactId>
 			<version>${appengine-gcs-client.version}</version>
 			<optional>true</optional>
 		</dependency>
+
+
+		<!-- Google Cloud Client Libraries	-->
+		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloud-storage</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
 
 		<!-- JWT -->
 		<dependency>
@@ -39,12 +48,17 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- JUnit -->
 		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-			<version>${junit-jupiter.version}</version>
-			<scope>test</scope>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.36</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.13.2</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -53,7 +67,28 @@
 			<version>1.18.22</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<!-- JUnit -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>${junit-jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.google.cloud</groupId>
+				<artifactId>libraries-bom</artifactId>
+				<version>25.1.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<profiles>
 		<profile>
 			<id>nexus</id>
