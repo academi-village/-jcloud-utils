@@ -27,17 +27,17 @@ import java.util.stream.StreamSupport;
  * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for App Engine Standard Java 8.
  */
 @Slf4j
-public class GcpCloudRun implements CloudMetadata, CloudStorage {
+public class GcpCloud implements CloudMetadata, CloudStorage {
 
     private final Storage storage;
     private final String  serviceAccountName;
 
-    public GcpCloudRun(Storage storage) {
+    public GcpCloud(Storage storage) {
         this.storage            = storage;
         this.serviceAccountName = storage.getServiceAccount(storage.getOptions().getProjectId()).getEmail();
     }
 
-    public GcpCloudRun() {
+    public GcpCloud() {
         String projectId = getProjectId().orElseThrow(() -> new AppException(JCloudError.PROJECT_ID_NOT_AVAILABLE));
         this.storage = StorageOptions.newBuilder()
                 .setProjectId(projectId)

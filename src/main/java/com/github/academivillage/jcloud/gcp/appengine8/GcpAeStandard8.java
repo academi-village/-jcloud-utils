@@ -3,7 +3,7 @@ package com.github.academivillage.jcloud.gcp.appengine8;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.Scope;
-import com.github.academivillage.jcloud.gcp.cloudrun.GcpCloudRun;
+import com.github.academivillage.jcloud.gcp.cloudrun.GcpCloud;
 import com.google.appengine.api.appidentity.AppIdentityService;
 import com.google.appengine.api.appidentity.AppIdentityService.GetAccessTokenResult;
 import com.google.appengine.api.appidentity.AppIdentityServiceFactory;
@@ -32,16 +32,16 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     /**
      * Used to work with Google Cloud Storage
      */
-    private final GcpCloudRun gcpCloudRun;
+    private final GcpCloud gcpCloud;
 
-    public GcpAeStandard8(AppIdentityService appIdentityService, GcpCloudRun gcpCloudRun) {
+    public GcpAeStandard8(AppIdentityService appIdentityService, GcpCloud gcpCloud) {
         this.serviceAccountName = appIdentityService.getServiceAccountName();
         this.accessTokenPool    = new AccessTokenPool(appIdentityService);
-        this.gcpCloudRun        = gcpCloudRun;
+        this.gcpCloud           = gcpCloud;
     }
 
     public GcpAeStandard8() {
-        this(AppIdentityServiceFactory.getAppIdentityService(), new GcpCloudRun());
+        this(AppIdentityServiceFactory.getAppIdentityService(), new GcpCloud());
     }
 
     @Override
@@ -67,27 +67,27 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
     @Override
     public byte[] downloadInMemory(String bucketName, String storagePath) {
-        return gcpCloudRun.downloadInMemory(bucketName, storagePath);
+        return gcpCloud.downloadInMemory(bucketName, storagePath);
     }
 
     @Override
     public File downloadInFile(String bucketName, String storagePath) {
-        return gcpCloudRun.downloadInFile(bucketName, storagePath);
+        return gcpCloud.downloadInFile(bucketName, storagePath);
     }
 
     @Override
     public File downloadInFile(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
-        return gcpCloudRun.downloadInFile(bucketName, directoryPrefix, fileNamePattern);
+        return gcpCloud.downloadInFile(bucketName, directoryPrefix, fileNamePattern);
     }
 
     @Override
     public void uploadFile(String bucketName, String storagePath, byte[] fileBytes) {
-        gcpCloudRun.uploadFile(bucketName, storagePath, fileBytes);
+        gcpCloud.uploadFile(bucketName, storagePath, fileBytes);
     }
 
     @Override
     public void uploadFile(String bucketName, String storagePath, File file) {
-        gcpCloudRun.uploadFile(bucketName, storagePath, file);
+        gcpCloud.uploadFile(bucketName, storagePath, file);
     }
 
     /**
