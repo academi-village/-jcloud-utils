@@ -15,6 +15,7 @@ import java.net.URLEncoder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static java.util.Collections.singletonList;
 
@@ -55,9 +56,10 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
     @Override
     public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
+        storagePath = fixPath(storagePath);
         GetAccessTokenResult accessToken = accessTokenPool.getAccessToken(singletonList(scope.getScopeUrl()));
 
-        String BASE_URL = "https://storage.googleapis.com/" + storagePath;
+        String BASE_URL = "https://storage.googleapis.com/" + bucketName + "/" + storagePath;
         return BASE_URL + "?GoogleAccessId=" + serviceAccountName
                + "&Expires=" + Instant.now().plus(expiration).getEpochSecond()
                + "&access_token=" + URLEncoder.encode(accessToken.getAccessToken());
@@ -74,7 +76,29 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     }
 
     @Override
+    public File downloadInFile(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
+        return gcpCloudRun.downloadInFile(bucketName, directoryPrefix, fileNamePattern);
+    }
+
+    @Override
     public void uploadFile(String bucketName, String storagePath, byte[] fileBytes) {
         gcpCloudRun.uploadFile(bucketName, storagePath, fileBytes);
+    }
+
+    @Override
+    public void uploadFile(String bucketName, String storagePath, File file) {
+        gcpCloudRun.uploadFile(bucketName, storagePath, file);
+    }
+
+    /**
+     * Drops the leading {@code /} for the storage path.
+     *
+     * @return The fixed storage path.
+     */
+    private String fixPath(String storagePath) {
+        if (storagePath.startsWith("/"))
+            return storagePath.substring(1);
+
+        return storagePath;
     }
 }

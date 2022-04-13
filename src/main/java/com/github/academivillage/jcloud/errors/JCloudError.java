@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.OBJECT;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 
 /**
  * A general handler error to be used by handler implementations.
@@ -16,7 +17,9 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 @RequiredArgsConstructor
 @JsonFormat(shape = OBJECT)
 public enum JCloudError implements AppError {
-    PROJECT_ID_NOT_AVAILABLE("projectId.not_available", "The GCP project ID is not available", HTTP_INTERNAL_ERROR);
+    PROJECT_ID_NOT_AVAILABLE("projectId.not_available", "The GCP project ID is not available", HTTP_INTERNAL_ERROR),
+    FILE_NOT_FOUND("file.not_found", "The requested file not found", HTTP_NOT_FOUND),
+    ;
 
     /**
      * Represents the error code.
