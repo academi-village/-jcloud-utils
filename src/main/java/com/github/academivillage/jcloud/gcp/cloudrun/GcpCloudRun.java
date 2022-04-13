@@ -6,8 +6,11 @@ import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.Scope;
 import com.google.cloud.ServiceOptions;
-import com.google.cloud.storage.*;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.SignUrlOption;
+import com.google.cloud.storage.StorageOptions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,8 +74,7 @@ public class GcpCloudRun implements CloudMetadata, CloudStorage {
     public File downloadInFile(String bucketName, String storagePath) {
         String fileName = getFileName(storagePath);
         File   tempFile = createTempFile(fileName);
-        Blob   blob     = storage.get(BlobId.of(bucketName, storagePath));
-        blob.downloadTo(tempFile.toPath());
+        storage.get(BlobId.of(bucketName, storagePath)).downloadTo(tempFile.toPath());
 
         return tempFile;
     }
