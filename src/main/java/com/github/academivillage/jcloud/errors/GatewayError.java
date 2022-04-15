@@ -1,19 +1,24 @@
 package com.github.academivillage.jcloud.errors;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import org.jetbrains.annotations.Nullable;
 
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
+
 /**
- * Encapsulates the information of an application error with possible more details.
+ * Encapsulates the details of a remote server error.
  *
  * @author Younes Rahimi
  */
 @Getter
 @ToString
 @RequiredArgsConstructor
-public class DetailedError implements AppError {
+@JsonAutoDetect(fieldVisibility = ANY)
+public class GatewayError implements AppError {
 
     /**
      * Represents the error code.
@@ -30,18 +35,6 @@ public class DetailedError implements AppError {
      * Represents the equivalent http status code for this error.
      * Mainly used to differentiate an error response from a successful response.
      */
-    private final int httpStatusCode;
-
-    /**
-     * Encapsulates the more specific details of the error.
-     */
-    @Nullable
-    private final Object details;
-
-    public DetailedError(AppError error, @Nullable Object details) {
-        this.code           = error.getCode();
-        this.httpStatusCode = error.getHttpStatusCode();
-        this.message        = error.getMessage();
-        this.details        = details;
-    }
+    @Setter
+    private int httpStatusCode;
 }

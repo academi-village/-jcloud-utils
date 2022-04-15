@@ -19,6 +19,19 @@ public interface CloudStorage {
     String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope);
 
     /**
+     * Generates a signed URL for specified file path.
+     * The signed URL could be used to download the file or to upload to the specified storage path.
+     *
+     * @param bucketName      Represents the bucket name. Example: {@code dynamikax-storage-eu}, {@code dynamikax-storage-eu-uat}, {@code dynamikax-storage-eu-prd}
+     * @param directoryPrefix Represents a directory path in the bucket. Example: {@code series/10003/}
+     * @param fileNamePattern Represents the file name pattern to indicate a unique file in the specified directory. Example: {@code *.dcm}
+     * @param expiration      Represents the expiration duration.
+     * @return A link to specified file that could be downloaded.
+     * @see <a href="https://cloud.google.com/storage/docs/access-control/signed-urls">GCP Signed URLs</a>
+     */
+    String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope);
+
+    /**
      * Downloads the requested resource.
      *
      * @param bucketName  Represents the bucket name. Example: {@code dynamikax-storage-eu}, {@code dynamikax-storage-eu-uat}, {@code dynamikax-storage-eu-prd}

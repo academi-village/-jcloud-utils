@@ -3,7 +3,7 @@ package com.github.academivillage.jcloud.errors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import org.springframework.lang.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 

@@ -1,6 +1,6 @@
 package com.github.academivillage.jcloud.errors;
 
-import org.springframework.lang.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A general handler error to be used by handler implementations.

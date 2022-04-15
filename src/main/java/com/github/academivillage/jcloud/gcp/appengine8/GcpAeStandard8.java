@@ -66,6 +66,11 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     }
 
     @Override
+    public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope) {
+        return gcpCloud.getSignedUrl(bucketName, directoryPrefix, fileNamePattern, expiration, scope);
+    }
+
+    @Override
     public byte[] downloadInMemory(String bucketName, String storagePath) {
         return gcpCloud.downloadInMemory(bucketName, storagePath);
     }

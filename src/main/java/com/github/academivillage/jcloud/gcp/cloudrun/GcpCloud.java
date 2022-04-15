@@ -69,6 +69,28 @@ public class GcpCloud implements CloudMetadata, CloudStorage {
     }
 
     @Override
+    public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope) {
+        Blob blob = getBlob(bucketName, directoryPrefix, fileNamePattern);
+
+        SignUrlOption v4Signature = SignUrlOption.withV4Signature();
+        URL           url         = blob.signUrl(expiration.getSeconds(), TimeUnit.SECONDS, v4Signature);
+
+        return url.toString();
+    }
+
+    @Override
+    public File downloadInFile(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
+        String fileType = getFileType(fileNamePattern);
+        String fileName = "gcp-run-" + Instant.now().toEpochMilli() + "." + fileType;
+        File   tempFile = createTempFile(fileName);
+
+        Blob blob = getBlob(bucketName, directoryPrefix, fileNamePattern);
+        blob.downloadTo(tempFile.toPath());
+
+        return tempFile;
+    }
+
+    @Override
     public byte[] downloadInMemory(String bucketName, String storagePath) {
         storagePath = fixPath(storagePath);
         return storage.readAllBytes(bucketName, storagePath);
@@ -80,28 +102,6 @@ public class GcpCloud implements CloudMetadata, CloudStorage {
         String fileName = getFileName(storagePath);
         File   tempFile = createTempFile(fileName);
         storage.get(BlobId.of(bucketName, storagePath)).downloadTo(tempFile.toPath());
-
-        return tempFile;
-    }
-
-    @Override
-    public File downloadInFile(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
-        String fileType = getFileType(fileNamePattern);
-        String fileName = "gcp-run-" + Instant.now().toEpochMilli() + "." + fileType;
-        File   tempFile = createTempFile(fileName);
-
-        Page<Blob> blobs = storage.list(
-                bucketName,
-                Storage.BlobListOption.prefix(directoryPrefix),
-                Storage.BlobListOption.currentDirectory());
-
-        Predicate<String> predicate = fileNamePattern.asPredicate();
-        Blob blob = StreamSupport.stream(blobs.iterateAll().spliterator(), false)
-                .filter(it -> predicate.test(getFileName(it.getBlobId().getName())))
-                .findFirst()
-                .orElseThrow(() -> new AppException(JCloudError.FILE_NOT_FOUND));
-
-        blob.downloadTo(tempFile.toPath());
 
         return tempFile;
     }
@@ -154,5 +154,19 @@ public class GcpCloud implements CloudMetadata, CloudStorage {
             return storagePath.substring(1);
 
         return storagePath;
+    }
+
+    private Blob getBlob(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
+        Page<Blob> blobs = storage.list(
+                bucketName,
+                Storage.BlobListOption.prefix(directoryPrefix),
+                Storage.BlobListOption.currentDirectory());
+
+        Predicate<String> predicate = fileNamePattern.asPredicate();
+
+        return StreamSupport.stream(blobs.iterateAll().spliterator(), false)
+                .filter(it -> predicate.test(getFileName(it.getBlobId().getName())))
+                .findFirst()
+                .orElseThrow(() -> new AppException(JCloudError.FILE_NOT_FOUND));
     }
 }
