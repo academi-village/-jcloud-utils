@@ -36,4 +36,17 @@ public interface AppError {
     default Object getDetails() {
         return null;
     }
+
+    default AppError withDetails(@Nullable Object details) {
+        return new ParameterizedError(getCode(), getMessage(), getHttpStatusCode(), getDetails(), null);
+    }
+
+    /**
+     * Interpolate the error message with given parameters.
+     *
+     * @return A new AppError with the interpolated error message.
+     */
+    default AppError withParams(@Nullable Object... params) {
+        return new ParameterizedError(this, params);
+    }
 }
