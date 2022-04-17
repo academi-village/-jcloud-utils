@@ -1,6 +1,8 @@
 package com.github.academivillage.jcloud.util;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,6 +23,7 @@ public class Jackson {
                 .build()
                 .registerModules(new Jdk8Module(), new JavaTimeModule())
                 .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
-                .setDateFormat(new StdDateFormat());
+                .setDateFormat(new StdDateFormat())
+                .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
     }
 }
