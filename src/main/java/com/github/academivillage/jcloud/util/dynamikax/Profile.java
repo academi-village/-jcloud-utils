@@ -1,8 +1,13 @@
 package com.github.academivillage.jcloud.util.dynamikax;
 
 import com.github.academivillage.jcloud.gcp.cloudrun.GcpCloud;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+import java.util.Optional;
+
+@Getter
 @RequiredArgsConstructor
 public enum Profile {
     DEVELOP("develop", "develop", "dynamikax-dev", "develop-dot-"),
@@ -31,12 +36,26 @@ public enum Profile {
      */
     private final String baseUrlPrefix;
 
+    public static Optional<Profile> ofBranch(String branchName) {
+        return Arrays.stream(Profile.values()).filter(it -> it.branchName.equals(branchName))
+                .findFirst();
+    }
+
     /**
      * @param microserviceName Represents the microservice name. Example: {@code msuser} or {@code msqualitycontrol}
      * @return The base URL of microservice on App Engine.
      * Example: {@code https://develop-dot-msuser-dot-dynamikax-dev.ew.r.appspot.com }
      */
-    public String getAppEngineMsBaseUrl(String microserviceName) {
+    public String getAppEngineBaseUrl(String microserviceName) {
         return "https://" + baseUrlPrefix + microserviceName + "-dot-" + projectId + ".ew.r.appspot.com";
+    }
+
+    /**
+     * @param microservice Represents the microservice on App Engine.
+     * @return The base URL of microservice on App Engine.
+     * Example: {@code https://develop-dot-msuser-dot-dynamikax-dev.ew.r.appspot.com }
+     */
+    public String getAppEngineBaseUrl(Microservice microservice) {
+        return getAppEngineBaseUrl(microservice.getMsName());
     }
 }

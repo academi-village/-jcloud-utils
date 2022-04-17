@@ -5,8 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.OBJECT;
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.*;
 
 /**
  * A general handler error to be used by handler implementations.
@@ -19,6 +18,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 public enum JCloudError implements AppError {
     PROJECT_ID_NOT_AVAILABLE("projectId.not_available", "The GCP project ID is not available", HTTP_INTERNAL_ERROR),
     FILE_NOT_FOUND("file.not_found", "The requested file not found", HTTP_NOT_FOUND),
+    MS_USER_LOGIN_FAILED("msUser.login_failed", "Calling MsUser microservice login API failed", HTTP_BAD_GATEWAY),
     ;
 
     /**

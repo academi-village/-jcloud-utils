@@ -1,7 +1,9 @@
 package com.github.academivillage.jcloud.util.dynamikax;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@Getter
 @RequiredArgsConstructor
 public enum Microservice {
     GLOBAL_STORAGE("global-storage"),
@@ -44,4 +46,8 @@ public enum Microservice {
      * Represents the microservice name on App Engine.
      */
     private final String msName;
+
+    public String getAppEngineBaseUrl(Profile profile) {
+        return profile.getAppEngineBaseUrl(this);
+    }
 }

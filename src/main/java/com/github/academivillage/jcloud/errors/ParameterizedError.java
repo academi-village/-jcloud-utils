@@ -53,7 +53,7 @@ public class ParameterizedError implements AppError {
         this.code           = error.getCode();
         this.message        = substituteErrorMessage(error, params);
         this.httpStatusCode = error.getHttpStatusCode();
-        this.details        = null;
+        this.details        = error.getDetails();
         this.params         = params;
     }
 
