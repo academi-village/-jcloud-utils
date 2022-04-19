@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.academivillage.jcloud.gcp.sdk.GcpSdk;
@@ -59,7 +58,7 @@ public class JCloudAutoConfiguration {
                 .featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
                 .autoDetectFields(true)
                 .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-                .modules(new Jdk8Module(), new JavaTimeModule(), new Hibernate5Module())
+                .modules(new Jdk8Module(), new JavaTimeModule())
                 .dateFormat(new StdDateFormat());
     }
 }

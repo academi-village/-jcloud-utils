@@ -61,6 +61,8 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
 
     @Override
     public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
+        log.debug("About to create a signed URL for resource in Google Storage path {}/{} using GCP SDK - Expiration: {}, Scope: {}",
+                bucketName, storagePath, expiration, scope);
         storagePath = fixPath(storagePath);
         // Define resource
         BlobInfo      blobInfo    = BlobInfo.newBuilder(BlobId.of(bucketName, storagePath)).build();
@@ -72,6 +74,8 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
 
     @Override
     public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope) {
+        log.debug("About to create a signed URL for resource in Google Storage path {}/{} using GCP SDK - File Name Pattern: {} - Expiration: {} - Scope: {}",
+                bucketName, directoryPrefix, fileNamePattern.pattern(), expiration, scope);
         Blob blob = getBlob(bucketName, directoryPrefix, fileNamePattern);
 
         SignUrlOption v4Signature = SignUrlOption.withV4Signature();
@@ -81,7 +85,27 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     }
 
     @Override
+    public byte[] downloadInMemory(String bucketName, String storagePath) {
+        log.debug("About to download file in memory from Google Storage path {}/{} using GCP SDK", bucketName, storagePath);
+        storagePath = fixPath(storagePath);
+        return storage.readAllBytes(bucketName, storagePath);
+    }
+
+    @Override
+    public File downloadInFile(String bucketName, String storagePath) {
+        log.debug("About to download file from Google Storage path {}/{} using GCP SDK", bucketName, storagePath);
+        storagePath = fixPath(storagePath);
+        String fileName = getFileName(storagePath);
+        File   tempFile = createTempFile(fileName);
+        storage.get(BlobId.of(bucketName, storagePath)).downloadTo(tempFile.toPath());
+
+        return tempFile;
+    }
+
+    @Override
     public File downloadInFile(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
+        log.debug("About to download file from Google Storage path {}/{} using GCP SDK - File Name Patter: {}",
+                bucketName, directoryPrefix, fileNamePattern.pattern());
         String fileType = getFileType(fileNamePattern);
         String fileName = "gcp-run-" + Instant.now().toEpochMilli() + "." + fileType;
         File   tempFile = createTempFile(fileName);
@@ -93,23 +117,9 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     }
 
     @Override
-    public byte[] downloadInMemory(String bucketName, String storagePath) {
-        storagePath = fixPath(storagePath);
-        return storage.readAllBytes(bucketName, storagePath);
-    }
-
-    @Override
-    public File downloadInFile(String bucketName, String storagePath) {
-        storagePath = fixPath(storagePath);
-        String fileName = getFileName(storagePath);
-        File   tempFile = createTempFile(fileName);
-        storage.get(BlobId.of(bucketName, storagePath)).downloadTo(tempFile.toPath());
-
-        return tempFile;
-    }
-
-    @Override
     public void uploadFile(String bucketName, String storagePath, byte[] fileBytes) {
+        log.debug("About to upload file to Google Storage path {}/{} using GCP SDK - File size: {} KB",
+                bucketName, storagePath, fileBytes.length / 1024);
         storagePath = fixPath(storagePath);
 
         BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, storagePath)).build();
@@ -119,6 +129,8 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     @Override
     @SneakyThrows
     public void uploadFile(String bucketName, String storagePath, File file) {
+        log.debug("About to upload file to Google Storage path {}/{} using GCP SDK - File path: {} - File size: {} KB",
+                bucketName, storagePath, file.getName(), file.length() / 1024);
         storagePath = fixPath(storagePath);
         BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, storagePath)).build();
         storage.createFrom(blobInfo, file.toPath(), Storage.BlobWriteOption.detectContentType());

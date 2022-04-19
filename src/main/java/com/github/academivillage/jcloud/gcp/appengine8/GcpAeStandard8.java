@@ -65,6 +65,8 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
     @Override
     public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
+        log.debug("About to create a signed URL for resource in Google Storage path {}/{} using AppEngine Java8 STD - Expiration: {}, Scope: {}",
+                bucketName, storagePath, expiration, scope);
         storagePath = fixPath(storagePath);
         GetAccessTokenResult accessToken = accessTokenPool.getAccessToken(Lists.of(scope.getScopeUrl()));
 
@@ -82,6 +84,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     @Override
     @SneakyThrows
     public byte[] downloadInMemory(String bucketName, String storagePath) {
+        log.debug("About to download file in memory from Google Storage path {}/{} using AppEngine Java8 STD", bucketName, storagePath);
         GcsFilename fileName   = new GcsFilename(bucketName, storagePath);
         GcsService  gcsService = GcsServiceFactory.createGcsService();
         try (val channel = gcsService.openPrefetchingReadChannel(fileName, 0, BUFFER_SIZE);
@@ -99,6 +102,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     @Override
     @SneakyThrows
     public File downloadInFile(String bucketName, String storagePath) {
+        log.debug("About to download file from Google Storage path {}/{} using AppEngine Java8 STD", bucketName, storagePath);
         GcsFilename fileName   = new GcsFilename(bucketName, storagePath);
         GcsService  gcsService = GcsServiceFactory.createGcsService();
         File        file       = File.createTempFile("gcp-storage", FileUtil.getFileName(storagePath));
