@@ -3,7 +3,7 @@ package com.github.academivillage.jcloud.util.dynamikax;
 import lombok.Data;
 
 /**
- * TODO Must be removed.
+ * @deprecated Must be removed
  */
 @Data
 @Deprecated

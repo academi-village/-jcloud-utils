@@ -1,32 +1,4 @@
-/*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
 package com.github.academivillage.jcloud.util.java;
-
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.annotation.Stable;
 
 import java.io.*;
 import java.util.*;
@@ -231,13 +203,10 @@ class ImmutableCollections {
 
     static final class ListItr<E> implements ListIterator<E> {
 
-        @Stable
         private final List<E> list;
 
-        @Stable
         private final int size;
 
-        @Stable
         private final boolean isListIterator;
 
         private int cursor;
@@ -322,13 +291,10 @@ class ImmutableCollections {
     static final class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess {
 
-        @Stable
         private final List<E> root;
 
-        @Stable
         private final int offset;
 
-        @Stable
         private final int size;
 
         private SubList(List<E> root, int offset, int size) {
@@ -385,10 +351,8 @@ class ImmutableCollections {
     static final class List12<E> extends AbstractImmutableList<E>
             implements Serializable {
 
-        @Stable
         private final E e0;
 
-        @Stable
         private final E e1;
 
         List12(E e0) {
@@ -434,7 +398,6 @@ class ImmutableCollections {
 
         static final List<?> EMPTY_LIST = new ListN<>();
 
-        @Stable
         private final E[] elements;
 
         @SafeVarargs
@@ -509,9 +472,7 @@ class ImmutableCollections {
     static final class Set12<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
-        @Stable
         final E e0;
-        @Stable
         final E e1;
 
         Set12(E e0) {
@@ -593,9 +554,7 @@ class ImmutableCollections {
 
         static final Set<?> EMPTY_SET = new SetN<>();
 
-        @Stable
         final E[] elements;
-        @Stable
         final int size;
 
         @SafeVarargs
@@ -771,9 +730,7 @@ class ImmutableCollections {
     }
 
     static final class Map1<K, V> extends AbstractImmutableMap<K, V> {
-        @Stable
         private final K k0;
-        @Stable
         private final V v0;
 
         Map1(K k0, V v0) {
@@ -829,10 +786,8 @@ class ImmutableCollections {
 
         static final Map<?, ?> EMPTY_MAP = new MapN<>();
 
-        @Stable
         final Object[] table; // pairs of key, value
 
-        @Stable
         final int size; // number of pairs
 
         MapN(Object... input) {
@@ -1059,7 +1014,7 @@ final class CollSer implements Serializable {
      * @serial
      * @since 9
      */
-    private transient Object[] array;
+    private final transient Object[] array;
 
     CollSer(int t, Object... a) {
         tag   = t;
@@ -1078,22 +1033,22 @@ final class CollSer implements Serializable {
      * followed by that many objects.
      * @since 9
      */
-    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        ois.defaultReadObject();
-        int len = ois.readInt();
-
-        if (len < 0) {
-            throw new InvalidObjectException("negative length " + len);
-        }
-
-        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(ois, Object[].class, len);
-        Object[] a = new Object[len];
-        for (int i = 0; i < len; i++) {
-            a[i] = ois.readObject();
-        }
-
-        array = a;
-    }
+//    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+//        ois.defaultReadObject();
+//        int len = ois.readInt();
+//
+//        if (len < 0) {
+//            throw new InvalidObjectException("negative length " + len);
+//        }
+//
+//        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(ois, Object[].class, len);
+//        Object[] a = new Object[len];
+//        for (int i = 0; i < len; i++) {
+//            a[i] = ois.readObject();
+//        }
+//
+//        array = a;
+//    }
 
     /**
      * Writes objects to the stream from

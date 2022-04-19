@@ -3,6 +3,11 @@ package com.github.academivillage.jcloud.util.dynamikax;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Encapsulates the micrso-service specific information.
+ *
+ * @author Younes Rahimi
+ */
 @Getter
 @RequiredArgsConstructor
 public enum Microservice {

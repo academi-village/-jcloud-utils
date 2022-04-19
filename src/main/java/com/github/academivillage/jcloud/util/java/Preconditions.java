@@ -24,8 +24,6 @@
  */
 package com.github.academivillage.jcloud.util.java;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
-
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -33,7 +31,7 @@ import java.util.function.Function;
 /**
  * Utility methods to check if state or arguments are correct.
  */
-public class Preconditions {
+class Preconditions {
 
     /**
      * Maps out-of-bounds values to a runtime exception.
@@ -56,7 +54,7 @@ public class Preconditions {
             BiFunction<String, List<Integer>, ? extends RuntimeException> oobef,
             String checkKind,
             Integer... args) {
-        List<Integer> largs = List.of(args);
+        List<Integer> largs = Lists.of(args);
         RuntimeException e = oobef == null
                              ? null : oobef.apply(checkKind, largs);
         return e == null
@@ -235,7 +233,6 @@ public class Preconditions {
      * the upper bound of a loop)
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
     public static <X extends RuntimeException>
     int checkIndex(int index, int length,
                    BiFunction<String, List<Integer>, X> oobef) {

@@ -1,8 +1,11 @@
-package com.github.academivillage.jcloud.util.dynamikax;
+package com.github.academivillage.jcloud.util.dynamikax.msuser;
 
 import com.github.academivillage.jcloud.errors.AppException;
 import com.github.academivillage.jcloud.util.cache.Cache;
 import com.github.academivillage.jcloud.util.cache.InMemoryCache;
+import com.github.academivillage.jcloud.util.dynamikax.MSResponse;
+import com.github.academivillage.jcloud.util.dynamikax.Microservice;
+import com.github.academivillage.jcloud.util.dynamikax.Profile;
 import com.github.academivillage.jcloud.util.java.Maps;
 import io.jsonwebtoken.lang.Strings;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +27,12 @@ import org.springframework.web.client.RestTemplate;
 import javax.validation.constraints.NotBlank;
 
 import static com.github.academivillage.jcloud.errors.JCloudError.MS_USER_LOGIN_FAILED;
-import static com.github.academivillage.jcloud.util.dynamikax.MsUserClient.MsUserProperties;
+import static com.github.academivillage.jcloud.util.dynamikax.msuser.MsUserClient.MsUserProperties;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Responsible of generating JWT tokens.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -38,10 +44,20 @@ public class MsUserClient {
     private final MsUserProperties   props;
     private final Cache<MsUserToken> tokenCache = new InMemoryCache<>();
 
+    /**
+     * Generates the JWT token for the default user.
+     *
+     * @return The JWT token of the default user.
+     */
     public String getJwtToken() {
-        return getJwtTokenUsingEmail(props.defaultUsername, props.defaultPassword);
+        return getJwtTokenUsingEmail(props.email, props.password);
     }
 
+    /**
+     * Generates the JWT token for the provided user.
+     *
+     * @return The JWT token of the provided user.
+     */
     public String getJwtTokenUsingEmail(String email, String password) {
         val token = tokenCache.get(email, () -> getMsUserToken(email, password));
 
@@ -87,10 +103,10 @@ public class MsUserClient {
         private String baseUrl;
 
         @NotBlank
-        private String defaultUsername;
+        private String email;
 
         @NotBlank
-        private String defaultPassword;
+        private String password;
     }
 
     @Setter

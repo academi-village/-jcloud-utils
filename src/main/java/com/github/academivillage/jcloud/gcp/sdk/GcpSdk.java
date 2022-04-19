@@ -1,4 +1,4 @@
-package com.github.academivillage.jcloud.gcp.cloudrun;
+package com.github.academivillage.jcloud.gcp.sdk;
 
 import com.github.academivillage.jcloud.errors.AppException;
 import com.github.academivillage.jcloud.errors.JCloudError;
@@ -23,21 +23,23 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
+import static com.github.academivillage.jcloud.util.FileUtil.getFileName;
+
 /**
- * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for App Engine Standard Java 8.
+ * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for all GCP serverless services.
  */
 @Slf4j
-public class GcpCloud implements CloudMetadata, CloudStorage {
+public class GcpSdk implements CloudMetadata, CloudStorage {
 
     private final Storage storage;
     private final String  serviceAccountName;
 
-    public GcpCloud(Storage storage) {
+    public GcpSdk(Storage storage) {
         this.storage            = storage;
         this.serviceAccountName = storage.getServiceAccount(storage.getOptions().getProjectId()).getEmail();
     }
 
-    public GcpCloud() {
+    public GcpSdk() {
         String projectId = getProjectId().orElseThrow(() -> new AppException(JCloudError.PROJECT_ID_NOT_AVAILABLE));
         this.storage = StorageOptions.newBuilder()
                 .setProjectId(projectId)
@@ -127,11 +129,6 @@ public class GcpCloud implements CloudMetadata, CloudStorage {
         if (split.length > 1) return split[split.length - 1];
 
         return fileNamePattern.pattern();
-    }
-
-    private String getFileName(String storagePath) {
-        String[] split = storagePath.split("/");
-        return split[split.length - 1];
     }
 
     @SneakyThrows

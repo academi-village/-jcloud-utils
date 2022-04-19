@@ -1,18 +1,23 @@
 package com.github.academivillage.jcloud.util.dynamikax;
 
-import com.github.academivillage.jcloud.gcp.cloudrun.GcpCloud;
+import com.github.academivillage.jcloud.gcp.sdk.GcpSdk;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
 import java.util.Optional;
 
+/**
+ * Encapsulates the profile (or environment) specific information.
+ *
+ * @author Younes Rahimi
+ */
 @Getter
 @RequiredArgsConstructor
 public enum Profile {
-    DEVELOP("develop", "develop", "dynamikax-dev", "develop-dot-"),
-    UAT("uat", "uat", "dynamikax-dev", "uat-dot-"),
-    PROD("master", "prod", "dynamikax", ""),
+    DEVELOP("develop", "develop", "dynamikax-dev", "develop-dot-", "dynamikax-storage-eu"),
+    UAT("uat", "uat", "dynamikax-dev", "uat-dot-", "dynamikax-storage-eu-uat"),
+    PROD("master", "prod", "dynamikax", "", "dynamikax-storage-eu-prd"),
     ;
 
     /**
@@ -27,7 +32,7 @@ public enum Profile {
 
     /**
      * Represents the GCP project ID. Example: {@code dynamikax-dev} or {@code dynamikax}
-     * Note: It's better to get this value from {@link GcpCloud}.
+     * Note: It's better to get this value from {@link GcpSdk}.
      */
     private final String projectId;
 
@@ -35,6 +40,11 @@ public enum Profile {
      * Represents the branch name in Git repository.
      */
     private final String baseUrlPrefix;
+
+    /**
+     * Represents the corresponding bucket name on GCP Storage.
+     */
+    private final String storageBucketName;
 
     public static Optional<Profile> ofBranch(String branchName) {
         return Arrays.stream(Profile.values()).filter(it -> it.branchName.equals(branchName))

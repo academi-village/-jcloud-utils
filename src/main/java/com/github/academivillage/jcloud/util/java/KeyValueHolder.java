@@ -1,7 +1,5 @@
 package com.github.academivillage.jcloud.util.java;
 
-import jdk.internal.vm.annotation.Stable;
-
 import java.util.Map;
 
 /**
@@ -24,9 +22,7 @@ import java.util.Map;
  * @since 9
  */
 final class KeyValueHolder<K, V> implements Map.Entry<K, V> {
-    @Stable
     final K key;
-    @Stable
     final V value;
 
     KeyValueHolder(K k, V v) {

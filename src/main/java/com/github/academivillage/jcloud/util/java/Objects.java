@@ -25,9 +25,6 @@
 
 package com.github.academivillage.jcloud.util.java;
 
-import jdk.internal.util.Preconditions;
-import jdk.internal.vm.annotation.ForceInline;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -54,7 +51,7 @@ import java.util.function.Supplier;
  * functional interface allocation, may exceed the cost of checking bounds.
  * @since 1.7
  */
-public final class Objects {
+final class Objects {
     private Objects() {
         throw new AssertionError("No java.util.Objects instances for you!");
     }
@@ -76,32 +73,6 @@ public final class Objects {
      */
     public static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
-    }
-
-    /**
-     * Returns {@code true} if the arguments are deeply equal to each other
-     * and {@code false} otherwise.
-     * <p>
-     * Two {@code null} values are deeply equal.  If both arguments are
-     * arrays, the algorithm in {@link Arrays#deepEquals(Object[],
-     * Object[]) Arrays.deepEquals} is used to determine equality.
-     * Otherwise, equality is determined by using the {@link
-     * Object#equals equals} method of the first argument.
-     *
-     * @param a an object
-     * @param b an object to be compared with {@code a} for deep equality
-     * @return {@code true} if the arguments are deeply equal to each other
-     * and {@code false} otherwise
-     * @see Arrays#deepEquals(Object[], Object[])
-     * @see Objects#equals(Object, Object)
-     */
-    public static boolean deepEquals(Object a, Object b) {
-        if (a == b)
-            return true;
-        else if (a == null || b == null)
-            return false;
-        else
-            return Arrays.deepEquals0(a, b);
     }
 
     /**
@@ -363,7 +334,6 @@ public final class Objects {
      * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
      * @since 9
      */
-    @ForceInline
     public static int checkIndex(int index, int length) {
         return Preconditions.checkIndex(index, length, null);
     }

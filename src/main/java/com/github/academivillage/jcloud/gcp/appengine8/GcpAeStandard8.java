@@ -3,21 +3,29 @@ package com.github.academivillage.jcloud.gcp.appengine8;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.Scope;
-import com.github.academivillage.jcloud.gcp.cloudrun.GcpCloud;
+import com.github.academivillage.jcloud.gcp.sdk.GcpSdk;
+import com.github.academivillage.jcloud.util.FileUtil;
+import com.github.academivillage.jcloud.util.java.Lists;
 import com.google.appengine.api.appidentity.AppIdentityService;
 import com.google.appengine.api.appidentity.AppIdentityService.GetAccessTokenResult;
 import com.google.appengine.api.appidentity.AppIdentityServiceFactory;
 import com.google.appengine.api.utils.SystemProperty;
+import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.regex.Pattern;
-
-import static java.util.Collections.singletonList;
 
 /**
  * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for App Engine Standard Java 8.
@@ -25,23 +33,24 @@ import static java.util.Collections.singletonList;
 @Slf4j
 public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
-    private final String serviceAccountName;
+    private static final int    BUFFER_SIZE = 4096;
+    private final        String serviceAccountName;
 
     private final AccessTokenPool accessTokenPool;
 
     /**
      * Used to work with Google Cloud Storage
      */
-    private final GcpCloud gcpCloud;
+    private final GcpSdk gcpSdk;
 
-    public GcpAeStandard8(AppIdentityService appIdentityService, GcpCloud gcpCloud) {
+    public GcpAeStandard8(AppIdentityService appIdentityService, GcpSdk gcpSdk) {
         this.serviceAccountName = appIdentityService.getServiceAccountName();
         this.accessTokenPool    = new AccessTokenPool(appIdentityService);
-        this.gcpCloud           = gcpCloud;
+        this.gcpSdk             = gcpSdk;
     }
 
     public GcpAeStandard8() {
-        this(AppIdentityServiceFactory.getAppIdentityService(), new GcpCloud());
+        this(AppIdentityServiceFactory.getAppIdentityService(), new GcpSdk());
     }
 
     @Override
@@ -57,7 +66,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     @Override
     public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
         storagePath = fixPath(storagePath);
-        GetAccessTokenResult accessToken = accessTokenPool.getAccessToken(singletonList(scope.getScopeUrl()));
+        GetAccessTokenResult accessToken = accessTokenPool.getAccessToken(Lists.of(scope.getScopeUrl()));
 
         String BASE_URL = "https://storage.googleapis.com/" + bucketName + "/" + storagePath;
         return BASE_URL + "?GoogleAccessId=" + serviceAccountName
@@ -67,32 +76,57 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
     @Override
     public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope) {
-        return gcpCloud.getSignedUrl(bucketName, directoryPrefix, fileNamePattern, expiration, scope);
+        return gcpSdk.getSignedUrl(bucketName, directoryPrefix, fileNamePattern, expiration, scope);
     }
 
     @Override
+    @SneakyThrows
     public byte[] downloadInMemory(String bucketName, String storagePath) {
-        return gcpCloud.downloadInMemory(bucketName, storagePath);
+        GcsFilename fileName   = new GcsFilename(bucketName, storagePath);
+        GcsService  gcsService = GcsServiceFactory.createGcsService();
+        try (val channel = gcsService.openPrefetchingReadChannel(fileName, 0, BUFFER_SIZE);
+             val bos = new ByteArrayOutputStream()) {
+            int bytesRead;
+            val buffer = ByteBuffer.allocate(BUFFER_SIZE);
+            while ((bytesRead = channel.read(buffer)) > 0) {
+                bos.write(buffer.array(), 0, bytesRead);
+                buffer.clear();
+            }
+            return bos.toByteArray();
+        }
     }
 
     @Override
+    @SneakyThrows
     public File downloadInFile(String bucketName, String storagePath) {
-        return gcpCloud.downloadInFile(bucketName, storagePath);
+        GcsFilename fileName   = new GcsFilename(bucketName, storagePath);
+        GcsService  gcsService = GcsServiceFactory.createGcsService();
+        File        file       = File.createTempFile("gcp-storage", FileUtil.getFileName(storagePath));
+        try (val channel = gcsService.openPrefetchingReadChannel(fileName, 0, BUFFER_SIZE);
+             val bos = new FileOutputStream(file)) {
+            int bytesRead;
+            val buffer = ByteBuffer.allocate(BUFFER_SIZE);
+            while ((bytesRead = channel.read(buffer)) > 0) {
+                bos.write(buffer.array(), 0, bytesRead);
+                buffer.clear();
+            }
+            return file;
+        }
     }
 
     @Override
     public File downloadInFile(String bucketName, String directoryPrefix, Pattern fileNamePattern) {
-        return gcpCloud.downloadInFile(bucketName, directoryPrefix, fileNamePattern);
+        return gcpSdk.downloadInFile(bucketName, directoryPrefix, fileNamePattern);
     }
 
     @Override
     public void uploadFile(String bucketName, String storagePath, byte[] fileBytes) {
-        gcpCloud.uploadFile(bucketName, storagePath, fileBytes);
+        gcpSdk.uploadFile(bucketName, storagePath, fileBytes);
     }
 
     @Override
     public void uploadFile(String bucketName, String storagePath, File file) {
-        gcpCloud.uploadFile(bucketName, storagePath, file);
+        gcpSdk.uploadFile(bucketName, storagePath, file);
     }
 
     /**
