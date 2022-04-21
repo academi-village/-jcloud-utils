@@ -1,5 +1,7 @@
 package com.github.academivillage.jcloud.gcp.appengine8;
 
+import com.github.academivillage.jcloud.errors.AppException;
+import com.github.academivillage.jcloud.errors.JCloudError;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.Scope;
@@ -16,15 +18,15 @@ import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -53,9 +55,15 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
         this(AppIdentityServiceFactory.getAppIdentityService(), new GcpSdk());
     }
 
-    @Override
-    public Optional<String> getProjectId() {
-        return Optional.ofNullable(SystemProperty.applicationId.get());
+    @Nullable
+    protected static String getAppEngineProjectIdFromAppId() {
+        String projectId = SystemProperty.applicationId.get();
+        if (projectId != null && projectId.contains(":")) {
+            int colonIndex = projectId.indexOf(":");
+            projectId = projectId.substring(colonIndex + 1);
+        }
+
+        return projectId;
     }
 
     @Override
@@ -82,27 +90,28 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     }
 
     @Override
+    public String getProjectId() {
+        val projectId = getAppEngineProjectIdFromAppId();
+        if (projectId == null)
+            throw new AppException(JCloudError.PROJECT_ID_NOT_AVAILABLE);
+
+        return projectId;
+    }
+
+    @Override
     @SneakyThrows
     public byte[] downloadInMemory(String bucketName, String storagePath) {
         log.debug("About to download file in memory from Google Storage path {}/{} using AppEngine Java8 STD", bucketName, storagePath);
-        GcsFilename fileName   = new GcsFilename(bucketName, storagePath);
-        GcsService  gcsService = GcsServiceFactory.createGcsService();
-        try (val channel = gcsService.openPrefetchingReadChannel(fileName, 0, BUFFER_SIZE);
-             val bos = new ByteArrayOutputStream()) {
-            int bytesRead;
-            val buffer = ByteBuffer.allocate(BUFFER_SIZE);
-            while ((bytesRead = channel.read(buffer)) > 0) {
-                bos.write(buffer.array(), 0, bytesRead);
-                buffer.clear();
-            }
-            return bos.toByteArray();
-        }
+        val downloadedFile = downloadInFile(bucketName, storagePath);
+
+        return Files.readAllBytes(downloadedFile.toPath());
     }
 
     @Override
     @SneakyThrows
     public File downloadInFile(String bucketName, String storagePath) {
         log.debug("About to download file from Google Storage path {}/{} using AppEngine Java8 STD", bucketName, storagePath);
+        storagePath = fixPath(storagePath);
         GcsFilename fileName   = new GcsFilename(bucketName, storagePath);
         GcsService  gcsService = GcsServiceFactory.createGcsService();
         File        file       = File.createTempFile("gcp-storage", FileUtil.getFileName(storagePath));
@@ -125,12 +134,12 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
     @Override
     public void uploadFile(String bucketName, String storagePath, byte[] fileBytes) {
-        gcpSdk.uploadFile(bucketName, storagePath, fileBytes);
+        gcpSdk.uploadFile(bucketName, fixPath(storagePath), fileBytes);
     }
 
     @Override
     public void uploadFile(String bucketName, String storagePath, File file) {
-        gcpSdk.uploadFile(bucketName, storagePath, file);
+        gcpSdk.uploadFile(bucketName, fixPath(storagePath), file);
     }
 
     /**

@@ -6,24 +6,31 @@ import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.Scope;
 import com.google.api.gax.paging.Page;
+import com.google.auth.Credentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.SignUrlOption;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import lombok.var;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 import static com.github.academivillage.jcloud.util.FileUtil.getFileName;
+
+/**
+ * For local development set the environment variables {@code GOOGLE_CLOUD_PROJECT=dynamikax-dev}
+ * and {@code GOOGLE_APPLICATION_CREDENTIALS=/usr/local/key.json}.
+ */
 
 /**
  * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for all GCP serverless services.
@@ -33,25 +40,46 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
 
     private final Storage storage;
     private final String  serviceAccountName;
+    private final String  projectId;
 
-    public GcpSdk(Storage storage) {
-        this.storage            = storage;
-        this.serviceAccountName = storage.getServiceAccount(storage.getOptions().getProjectId()).getEmail();
+    /**
+     * @param projectId   See:  <a href="https://googlecloudplatform.github.io/spring-cloud-gcp/2.0.10/reference/html/index.html#project-id">Fetching Project ID</a>.
+     *                    For local development add {@code spring.cloud.gcp.project-id=dynamikax-dev} to the {@code application.properties}.
+     *                    Or set the environment variable {@code GOOGLE_CLOUD_PROJECT=dynamikax-dev}.<br><br>
+     * @param credentials See:  <a href="https://googlecloudplatform.github.io/spring-cloud-gcp/2.0.10/reference/html/index.html#credentials">Fetching Credentials</a>.
+     *                    For local development add {@code spring.cloud.gcp.credentials.location=file:/usr/local/key.json} to the {@code application.properties}.
+     *                    Or set the environment variable {@code GOOGLE_APPLICATION_CREDENTIALS=/usr/local/key.json}.
+     *                    Read more: <a href="https://cloud.google.com/docs/authentication/production#passing_variable">Passing credentials via environment variable</a>
+     */
+    @SneakyThrows
+    public GcpSdk(String projectId, Credentials credentials) {
+        val builder = StorageOptions.newBuilder().setCredentials(credentials);
+        this.storage   = "no_app_id".equals(projectId)
+                         ? builder.build().getService()
+                         : builder.setProjectId(projectId).build().getService();
+        this.projectId = this.storage.getOptions().getProjectId();
+
+        this.serviceAccountName = storage.getServiceAccount(this.projectId).getEmail();
     }
 
+    /**
+     * For local development set the environment variables {@code GOOGLE_CLOUD_PROJECT=dynamikax-dev}
+     * and {@code GOOGLE_APPLICATION_CREDENTIALS=/usr/local/key.json}.
+     * Read more: <a href="https://cloud.google.com/docs/authentication/production#passing_variable">Passing credentials via environment variable</a>
+     */
     public GcpSdk() {
-        String projectId = getProjectId().orElseThrow(() -> new AppException(JCloudError.PROJECT_ID_NOT_AVAILABLE));
-        this.storage = StorageOptions.newBuilder()
-                .setProjectId(projectId)
-                .build()
-                .getService();
+        var projectId = ServiceOptions.getDefaultProjectId();
+        this.storage = "no_app_id".equals(projectId)
+                       ? StorageOptions.newBuilder().build().getService()
+                       : StorageOptions.newBuilder().setProjectId(projectId).build().getService();
 
-        this.serviceAccountName = storage.getServiceAccount(projectId).getEmail();
+        this.projectId          = storage.getOptions().getProjectId();
+        this.serviceAccountName = storage.getServiceAccount(this.projectId).getEmail();
     }
 
     @Override
-    public Optional<String> getProjectId() {
-        return Optional.ofNullable(ServiceOptions.getDefaultProjectId());
+    public String getProjectId() {
+        return projectId;
     }
 
     @Override
@@ -63,9 +91,8 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
         log.debug("About to create a signed URL for resource in Google Storage path {}/{} using GCP SDK - Expiration: {}, Scope: {}",
                 bucketName, storagePath, expiration, scope);
-        storagePath = fixPath(storagePath);
         // Define resource
-        BlobInfo      blobInfo    = BlobInfo.newBuilder(BlobId.of(bucketName, storagePath)).build();
+        BlobInfo      blobInfo    = BlobInfo.newBuilder(BlobId.of(bucketName, fixPath(storagePath))).build();
         SignUrlOption v4Signature = SignUrlOption.withV4Signature();
         URL           url         = storage.signUrl(blobInfo, expiration.getSeconds(), TimeUnit.SECONDS, v4Signature);
 
@@ -87,8 +114,7 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     @Override
     public byte[] downloadInMemory(String bucketName, String storagePath) {
         log.debug("About to download file in memory from Google Storage path {}/{} using GCP SDK", bucketName, storagePath);
-        storagePath = fixPath(storagePath);
-        return storage.readAllBytes(bucketName, storagePath);
+        return storage.readAllBytes(bucketName, fixPath(storagePath));
     }
 
     @Override
@@ -120,9 +146,8 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     public void uploadFile(String bucketName, String storagePath, byte[] fileBytes) {
         log.debug("About to upload file to Google Storage path {}/{} using GCP SDK - File size: {} KB",
                 bucketName, storagePath, fileBytes.length / 1024);
-        storagePath = fixPath(storagePath);
 
-        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, storagePath)).build();
+        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, fixPath(storagePath))).build();
         storage.create(blobInfo, fileBytes, Storage.BlobTargetOption.detectContentType());
     }
 
@@ -131,8 +156,7 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     public void uploadFile(String bucketName, String storagePath, File file) {
         log.debug("About to upload file to Google Storage path {}/{} using GCP SDK - File path: {} - File size: {} KB",
                 bucketName, storagePath, file.getName(), file.length() / 1024);
-        storagePath = fixPath(storagePath);
-        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, storagePath)).build();
+        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, fixPath(storagePath))).build();
         storage.createFrom(blobInfo, file.toPath(), Storage.BlobWriteOption.detectContentType());
     }
 
