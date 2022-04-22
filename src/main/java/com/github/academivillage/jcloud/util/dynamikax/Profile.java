@@ -47,8 +47,9 @@ public enum Profile {
      */
     private final String storageBucketName;
 
-    public static Optional<Profile> ofBranch(String branchName) {
-        return Arrays.stream(Profile.values()).filter(it -> it.branchName.equals(branchName))
+    public static Optional<Profile> ofAppProfile(String appProfile) {
+        return Arrays.stream(Profile.values())
+                .filter(it -> it.appProfile.equals(appProfile))
                 .findFirst();
     }
 

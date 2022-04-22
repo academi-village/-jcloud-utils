@@ -71,7 +71,7 @@ public class JCloudAutoConfiguration {
     @Bean
     public Profile activeProfile() {
         return Arrays.stream(env.getActiveProfiles())
-                .map(Profile::ofBranch)
+                .map(Profile::ofAppProfile)
                 .findFirst()
                 .flatMap(Function.identity())
                 .orElse(Profile.DEVELOP);
