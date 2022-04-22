@@ -16,7 +16,7 @@ public interface CloudStorage {
      * @return A link to the specified file that could be downloaded.
      * @see <a href="https://cloud.google.com/storage/docs/access-control/signed-urls">GCP Signed URLs</a>
      */
-    String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope);
+    String getSignedUrl(String bucketName, String storagePath, Duration expiration, StorageScope scope);
 
     /**
      * Generates a signed URL for specified file path.
@@ -29,7 +29,7 @@ public interface CloudStorage {
      * @return A link to the specified file that could be downloaded.
      * @see <a href="https://cloud.google.com/storage/docs/access-control/signed-urls">GCP Signed URLs</a>
      */
-    String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope);
+    String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, StorageScope scope);
 
     /**
      * Downloads the requested resource.

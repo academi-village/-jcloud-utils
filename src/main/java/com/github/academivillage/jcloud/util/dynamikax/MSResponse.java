@@ -11,4 +11,6 @@ public class MSResponse<T> {
     private int    responseCode;
     private String responseMessage;
     private T      data;
+
+    private String errorCode;
 }

@@ -4,7 +4,7 @@ import com.github.academivillage.jcloud.errors.AppException;
 import com.github.academivillage.jcloud.errors.JCloudError;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
-import com.github.academivillage.jcloud.gcp.Scope;
+import com.github.academivillage.jcloud.gcp.StorageScope;
 import com.github.academivillage.jcloud.gcp.sdk.GcpSdk;
 import com.github.academivillage.jcloud.util.FileUtil;
 import com.github.academivillage.jcloud.util.java.Lists;
@@ -72,7 +72,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     }
 
     @Override
-    public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
+    public String getSignedUrl(String bucketName, String storagePath, Duration expiration, StorageScope scope) {
         log.debug("About to create a signed URL for resource in Google Storage path {}/{} using AppEngine Java8 STD - Expiration: {}, Scope: {}",
                 bucketName, storagePath, expiration, scope);
         storagePath = fixPath(storagePath);
@@ -85,7 +85,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     }
 
     @Override
-    public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope) {
+    public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, StorageScope scope) {
         return gcpSdk.getSignedUrl(bucketName, directoryPrefix, fileNamePattern, expiration, scope);
     }
 

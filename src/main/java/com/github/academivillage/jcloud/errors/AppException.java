@@ -18,7 +18,10 @@ public class AppException extends RuntimeException {
      */
     private final AppError error;
 
-    public AppException(AppError error) {this.error = error;}
+    public AppException(AppError error) {
+        super(error.getMessage());
+        this.error = error;
+    }
 
     /**
      * @param params Used to interpolate the error message.

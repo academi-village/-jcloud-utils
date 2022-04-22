@@ -4,7 +4,7 @@ import com.github.academivillage.jcloud.errors.AppException;
 import com.github.academivillage.jcloud.errors.JCloudError;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
-import com.github.academivillage.jcloud.gcp.Scope;
+import com.github.academivillage.jcloud.gcp.StorageScope;
 import com.google.api.gax.paging.Page;
 import com.google.auth.Credentials;
 import com.google.cloud.ServiceOptions;
@@ -28,12 +28,10 @@ import java.util.stream.StreamSupport;
 import static com.github.academivillage.jcloud.util.FileUtil.getFileName;
 
 /**
- * For local development set the environment variables {@code GOOGLE_CLOUD_PROJECT=dynamikax-dev}
- * and {@code GOOGLE_APPLICATION_CREDENTIALS=/usr/local/key.json}.
- */
-
-/**
- * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for all GCP serverless services.
+ * The default implementation of {@link CloudMetadata} and {@link CloudStorage} for all GCP serverless services. <br/>
+ * <p>
+ * For local development set the environment variables {@code export GOOGLE_CLOUD_PROJECT=dynamikax-dev}
+ * and {@code export GOOGLE_APPLICATION_CREDENTIALS=/path/to/private_key.json}.
  */
 @Slf4j
 public class GcpSdk implements CloudMetadata, CloudStorage {
@@ -43,38 +41,44 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     private final String  projectId;
 
     /**
-     * @param projectId   See:  <a href="https://googlecloudplatform.github.io/spring-cloud-gcp/2.0.10/reference/html/index.html#project-id">Fetching Project ID</a>.
+     * @param projectId   See: <a href="https://googlecloudplatform.github.io/spring-cloud-gcp/2.0.10/reference/html/index.html#project-id">Fetching Project ID</a>.
      *                    For local development add {@code spring.cloud.gcp.project-id=dynamikax-dev} to the {@code application.properties}.
-     *                    Or set the environment variable {@code GOOGLE_CLOUD_PROJECT=dynamikax-dev}.<br><br>
+     *                    Or set the environment variable {@code export GOOGLE_CLOUD_PROJECT=dynamikax-dev}.<br><br>
      * @param credentials See:  <a href="https://googlecloudplatform.github.io/spring-cloud-gcp/2.0.10/reference/html/index.html#credentials">Fetching Credentials</a>.
-     *                    For local development add {@code spring.cloud.gcp.credentials.location=file:/usr/local/key.json} to the {@code application.properties}.
-     *                    Or set the environment variable {@code GOOGLE_APPLICATION_CREDENTIALS=/usr/local/key.json}.
+     *                    For local development add {@code spring.cloud.gcp.credentials.location=file:/path/to/private_key.json} to the {@code application.properties}.
+     *                    Or set the environment variable {@code export GOOGLE_APPLICATION_CREDENTIALS=/path/to/private_key.json}.
      *                    Read more: <a href="https://cloud.google.com/docs/authentication/production#passing_variable">Passing credentials via environment variable</a>
      */
     @SneakyThrows
     public GcpSdk(String projectId, Credentials credentials) {
+        log.debug("Initiating GcpSdk. ProjectId: {}, Credentials : {} - {}", projectId, credentials.getClass(), credentials);
         val builder = StorageOptions.newBuilder().setCredentials(credentials);
-        this.storage   = "no_app_id".equals(projectId)
-                         ? builder.build().getService()
-                         : builder.setProjectId(projectId).build().getService();
-        this.projectId = this.storage.getOptions().getProjectId();
-
+        this.storage            = "no_app_id".equals(projectId)
+                                  ? builder.build().getService()
+                                  : builder.setProjectId(projectId).build().getService();
+        this.projectId          = this.storage.getOptions().getProjectId();
         this.serviceAccountName = storage.getServiceAccount(this.projectId).getEmail();
+
+        log.debug("Initiating GcpSdk done. Final ProjectId: {}, ServiceAccountName : {}",
+                this.projectId, serviceAccountName);
     }
 
     /**
      * For local development set the environment variables {@code GOOGLE_CLOUD_PROJECT=dynamikax-dev}
-     * and {@code GOOGLE_APPLICATION_CREDENTIALS=/usr/local/key.json}.
+     * and {@code export GOOGLE_APPLICATION_CREDENTIALS=/path/to/private_key.json}.
      * Read more: <a href="https://cloud.google.com/docs/authentication/production#passing_variable">Passing credentials via environment variable</a>
      */
     public GcpSdk() {
         var projectId = ServiceOptions.getDefaultProjectId();
+        log.debug("Initiating GcpSdk by default constructor. ProjectId: {}", projectId);
         this.storage = "no_app_id".equals(projectId)
                        ? StorageOptions.newBuilder().build().getService()
                        : StorageOptions.newBuilder().setProjectId(projectId).build().getService();
 
         this.projectId          = storage.getOptions().getProjectId();
         this.serviceAccountName = storage.getServiceAccount(this.projectId).getEmail();
+        log.debug("Initiating GcpSdk by default constructor done. Final ProjectId: {}, ServiceAccountName : {}",
+                this.projectId, serviceAccountName);
     }
 
     @Override
@@ -88,7 +92,7 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     }
 
     @Override
-    public String getSignedUrl(String bucketName, String storagePath, Duration expiration, Scope scope) {
+    public String getSignedUrl(String bucketName, String storagePath, Duration expiration, StorageScope scope) {
         log.debug("About to create a signed URL for resource in Google Storage path {}/{} using GCP SDK - Expiration: {}, Scope: {}",
                 bucketName, storagePath, expiration, scope);
         // Define resource
@@ -100,7 +104,7 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
     }
 
     @Override
-    public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, Scope scope) {
+    public String getSignedUrl(String bucketName, String directoryPrefix, Pattern fileNamePattern, Duration expiration, StorageScope scope) {
         log.debug("About to create a signed URL for resource in Google Storage path {}/{} using GCP SDK - File Name Pattern: {} - Expiration: {} - Scope: {}",
                 bucketName, directoryPrefix, fileNamePattern.pattern(), expiration, scope);
         Blob blob = getBlob(bucketName, directoryPrefix, fileNamePattern);

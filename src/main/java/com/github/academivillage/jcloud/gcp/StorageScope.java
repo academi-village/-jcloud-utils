@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public enum Scope {
+public enum StorageScope {
 
     /**
      * Only allows access to read data, including listing buckets.

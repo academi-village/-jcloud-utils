@@ -15,6 +15,7 @@ import java.util.Optional;
 @Getter
 @RequiredArgsConstructor
 public enum Profile {
+    LOCAL("develop", "local", "dynamikax-dev", "develop-dot-", "dynamikax-storage-eu"),
     DEVELOP("develop", "develop", "dynamikax-dev", "develop-dot-", "dynamikax-storage-eu"),
     UAT("uat", "uat", "dynamikax-dev", "uat-dot-", "dynamikax-storage-eu-uat"),
     PROD("master", "prod", "dynamikax", "", "dynamikax-storage-eu-prd"),
