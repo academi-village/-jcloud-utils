@@ -7,7 +7,6 @@ import lombok.ToString;
  * Encapsulates an {@link AppError}.
  *
  * @author Younes Rahimi
- * @author Mohammad Reza Dehghani
  */
 @Getter
 @ToString
