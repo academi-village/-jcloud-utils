@@ -47,7 +47,13 @@ public enum Profile {
      */
     private final String storageBucketName;
 
-    public static Optional<Profile> ofAppProfile(String appProfile) {
+    /**
+     * Finds the profile by (Spring) application's profile.
+     *
+     * @param appProfile Represents the (Spring) application's profile.
+     * @return The optional profile. May be empty.
+     */
+    public static Optional<Profile> fromAppProfile(String appProfile) {
         return Arrays.stream(Profile.values())
                 .filter(it -> it.appProfile.equals(appProfile))
                 .findFirst();

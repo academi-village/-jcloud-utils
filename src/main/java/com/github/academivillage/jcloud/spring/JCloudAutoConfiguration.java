@@ -10,7 +10,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.sdk.GcpSdk;
-import com.github.academivillage.jcloud.util.Serializer;
+import com.github.academivillage.jcloud.util.Jackson;
 import com.github.academivillage.jcloud.util.dynamikax.AppExceptionHandler;
 import com.github.academivillage.jcloud.util.dynamikax.Profile;
 import com.github.academivillage.jcloud.util.dynamikax.msuser.MsUserClient;
@@ -18,6 +18,7 @@ import com.google.api.gax.core.CredentialsProvider;
 import com.google.cloud.spring.core.GcpEnvironment;
 import com.google.cloud.spring.core.GcpEnvironmentProvider;
 import com.google.cloud.spring.core.GcpProjectIdProvider;
+import com.google.cloud.storage.Storage;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -64,14 +65,19 @@ public class JCloudAutoConfiguration {
     }
 
     @Bean
-    public Serializer serializer(ObjectMapper objectMapper) {
-        return new Serializer(objectMapper);
+    public Storage storage(GcpSdk gcpSdk) {
+        return gcpSdk.storage;
+    }
+
+    @Bean
+    public Jackson jackson(ObjectMapper objectMapper) {
+        return new Jackson(objectMapper);
     }
 
     @Bean
     public Profile activeProfile() {
         return Arrays.stream(env.getActiveProfiles())
-                .map(Profile::ofAppProfile)
+                .map(Profile::fromAppProfile)
                 .findFirst()
                 .flatMap(Function.identity())
                 .orElse(Profile.DEVELOP);

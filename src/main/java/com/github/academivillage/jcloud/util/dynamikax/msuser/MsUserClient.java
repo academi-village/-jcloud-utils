@@ -50,7 +50,7 @@ public class MsUserClient {
      * @return The JWT token of the default user.
      */
     public String getJwtToken() {
-        return getJwtTokenUsingEmail(props.email, props.password);
+        return getJwtToken(props.email, props.password);
     }
 
     /**
@@ -58,7 +58,7 @@ public class MsUserClient {
      *
      * @return The JWT token of the provided user.
      */
-    public String getJwtTokenUsingEmail(String email, String password) {
+    public String getJwtToken(String email, String password) {
         val token = tokenCache.get(email, () -> getMsUserToken(email, password));
 
         return requireNonNull(token).jwtToken;
@@ -66,8 +66,7 @@ public class MsUserClient {
 
     @NotNull
     private MsUserToken getMsUserToken(String email, String password) {
-        val url = getBaseUrl()
-                  + "/api/user/authenticate-with-email-address-no-captcha";
+        val url  = getBaseUrl() + "/api/user/authenticate-with-email-address-no-captcha";
         val body = Maps.of("emailAddress", email, "password", password);
 
         val response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body),

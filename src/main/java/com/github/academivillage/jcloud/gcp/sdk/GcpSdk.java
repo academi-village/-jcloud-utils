@@ -36,7 +36,7 @@ import static com.github.academivillage.jcloud.util.FileUtil.getFileName;
 @Slf4j
 public class GcpSdk implements CloudMetadata, CloudStorage {
 
-    private final Storage storage;
+    public final  Storage storage;
     private final String  serviceAccountName;
     private final String  projectId;
 
