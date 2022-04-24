@@ -12,6 +12,7 @@ import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.sdk.GcpSdk;
 import com.github.academivillage.jcloud.util.Jackson;
 import com.github.academivillage.jcloud.util.dynamikax.AppExceptionHandler;
+import com.github.academivillage.jcloud.util.dynamikax.HttpClientConfiguration;
 import com.github.academivillage.jcloud.util.dynamikax.Profile;
 import com.github.academivillage.jcloud.util.dynamikax.msuser.MsUserClient;
 import com.google.api.gax.core.CredentialsProvider;
@@ -44,7 +45,7 @@ import java.util.function.Function;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@Import({MsUserClient.class, AppExceptionHandler.class})
+@Import({MsUserClient.class, AppExceptionHandler.class, HttpClientConfiguration.class})
 public class JCloudAutoConfiguration {
 
     private final Environment env;
@@ -65,6 +66,7 @@ public class JCloudAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public Storage storage(GcpSdk gcpSdk) {
         return gcpSdk.storage;
     }

@@ -17,12 +17,12 @@ public class MsUserToken implements Cache.Expirable {
     private static final JwtParser JWT_PARSER = Jwts.parserBuilder().build();
 
     /**
-     * Subject of JWT token or merely the user email. Example: {@code iag.microservice@ia-grp.com}
+     * Subject of JWT token or merely the username. Example: {@code iag.microservice}
      */
     public String subject;
 
     /**
-     * Represents the user ID.
+     * Represents the user ID in MsUser microservice.
      */
     public Long userId;
 

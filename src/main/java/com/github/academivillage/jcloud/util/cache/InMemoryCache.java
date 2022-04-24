@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * An in-memory implementation of {@link Cache} using {@link ConcurrentHashMap}.
+ * An in-memory implementation of {@link Cache} using a {@link ConcurrentHashMap}.
  *
  * @param <T> The type of cache values. For the cache to be expirable the {@link T} must implement the {@link Expirable}.
  * @author Younes Rahimi
@@ -17,6 +17,9 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class InMemoryCache<T> implements Cache<T> {
 
+    /**
+     * Represents the cache backend. Contains the actual cache key/values.
+     */
     private final ConcurrentHashMap<String, T> cacheMap = new ConcurrentHashMap<>();
 
     /**
