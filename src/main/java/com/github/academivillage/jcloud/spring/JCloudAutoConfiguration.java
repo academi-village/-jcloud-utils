@@ -25,11 +25,14 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -45,6 +48,7 @@ import java.util.function.Function;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @Import({MsUserClient.class, AppExceptionHandler.class, HttpClientConfiguration.class})
 public class JCloudAutoConfiguration {
 
@@ -107,13 +111,13 @@ public class JCloudAutoConfiguration {
     @Bean
     @SneakyThrows
     @ConditionalOnMissingBean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
     public PublicKey publicKey(GcpEnvironmentProvider gcpEnvironmentProvider,
                                Profile activeProfile,
                                CloudStorage storage,
                                @Value("${app.cloudkey.storage.bucket:}") String cloudKeyBucketName,
                                @Value("${app.cloudkey.storage.path:dynamikax/cloudKeys/jwtRS256.key.pub}") String cloudKeyStoragePath,
-                               @Value("${app.cloudkey.local.path:}") String cloudKeyLocalPath
-    ) {
+                               @Value("${app.cloudkey.local.path:}") String cloudKeyLocalPath) {
         val gcpEnv = gcpEnvironmentProvider.getCurrentEnvironment();
         log.debug("Gcp Environment: {} - Active Profile: {}", gcpEnv, activeProfile);
         File cloudKeyFile;
