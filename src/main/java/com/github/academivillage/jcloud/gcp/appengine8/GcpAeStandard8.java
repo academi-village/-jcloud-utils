@@ -15,15 +15,18 @@ import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.common.io.BaseEncoding;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.http.HttpMethod;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,7 +41,8 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     private static final int    BUFFER_SIZE = 4096;
     private final        String serviceAccountName;
 
-    private final AccessTokenPool accessTokenPool;
+    private final AppIdentityService appIdentityService;
+    private final AccessTokenPool    accessTokenPool;
 
     /**
      * Used to work with Google Cloud Storage
@@ -47,6 +51,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
 
     public GcpAeStandard8(AppIdentityService appIdentityService, GcpSdk gcpSdk) {
         this.serviceAccountName = appIdentityService.getServiceAccountName();
+        this.appIdentityService = appIdentityService;
         this.accessTokenPool    = new AccessTokenPool(appIdentityService);
         this.gcpSdk             = gcpSdk;
     }
@@ -72,6 +77,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     }
 
     @Override
+    @SneakyThrows
     public String getSignedUrl(String bucketName, String storagePath, Duration expiration, StorageScope scope) {
         log.debug("About to create a signed URL for resource in Google Storage path {}/{} using AppEngine Java8 STD - Expiration: {}, Scope: {}",
                 bucketName, storagePath, expiration, scope);
@@ -81,7 +87,8 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
         String BASE_URL = "https://storage.googleapis.com/" + bucketName + "/" + storagePath;
         return BASE_URL + "?GoogleAccessId=" + serviceAccountName
                + "&Expires=" + Instant.now().plus(expiration).getEpochSecond()
-               + "&access_token=" + URLEncoder.encode(accessToken.getAccessToken());
+               + "&access_token=" + URLEncoder.encode(accessToken.getAccessToken(), StandardCharsets.UTF_8.name())
+               + "&Signature=" + generateSignature(bucketName, storagePath, expiration);
     }
 
     @Override
@@ -152,5 +159,15 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
             return storagePath.substring(1);
 
         return storagePath;
+    }
+
+    private String generateSignature(String bucketName, String storagePath, Duration expiration) {
+        val Expiration = Instant.now().plus(expiration).toEpochMilli() / 1000;
+        val StringToSign = HttpMethod.GET + "\n" +
+                           Expiration + "\n" +
+                           bucketName + "/" + storagePath;
+        val signatureByte = appIdentityService.signForApp(StringToSign.getBytes()).getSignature();
+
+        return BaseEncoding.base64Url().encode(signatureByte);
     }
 }

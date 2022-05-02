@@ -15,11 +15,15 @@ import com.github.academivillage.jcloud.util.dynamikax.AppExceptionHandler;
 import com.github.academivillage.jcloud.util.dynamikax.HttpClientConfiguration;
 import com.github.academivillage.jcloud.util.dynamikax.Profile;
 import com.github.academivillage.jcloud.util.dynamikax.msuser.MsUserClient;
+import com.github.academivillage.jcloud.util.dynamikax.security.AuthorizationService;
+import com.github.academivillage.jcloud.util.dynamikax.security.SecurityAuditorAware;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.cloud.spring.core.GcpEnvironment;
 import com.google.cloud.spring.core.GcpEnvironmentProvider;
 import com.google.cloud.spring.core.GcpProjectIdProvider;
 import com.google.cloud.storage.Storage;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +38,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -49,7 +54,13 @@ import java.util.function.Function;
 @Configuration
 @RequiredArgsConstructor
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
-@Import({MsUserClient.class, AppExceptionHandler.class, HttpClientConfiguration.class})
+@Import({
+        MsUserClient.class,
+        AppExceptionHandler.class,
+        HttpClientConfiguration.class,
+        AuthorizationService.class,
+        SecurityAuditorAware.class
+})
 public class JCloudAutoConfiguration {
 
     private final Environment env;
@@ -138,5 +149,17 @@ public class JCloudAutoConfiguration {
         val kf   = KeyFactory.getInstance("RSA");
 
         return kf.generatePublic(spec);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JwtParser jwtParser(PublicKey publicKey) {
+        return Jwts.parserBuilder().setSigningKey(publicKey).build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AuditorAware<String> securityAuditorAware(AuthorizationService authService) {
+        return new SecurityAuditorAware(authService);
     }
 }

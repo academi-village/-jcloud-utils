@@ -16,9 +16,12 @@ import static java.net.HttpURLConnection.*;
 @RequiredArgsConstructor
 @JsonFormat(shape = OBJECT)
 public enum JCloudError implements AppError {
+    CAN_NOT_FOUND("resource.not_found", "{0} {1} cannot be found", HTTP_NOT_FOUND),
     PROJECT_ID_NOT_AVAILABLE("projectId.not_available", "The GCP project ID is not available", HTTP_INTERNAL_ERROR),
     FILE_NOT_FOUND("file.not_found", "The requested file not found", HTTP_NOT_FOUND),
     MS_USER_LOGIN_FAILED("msUser.login_failed", "Calling MsUser microservice login API failed", HTTP_BAD_GATEWAY),
+    USER_NOT_AUTHENTICATED("user.not_authenticated", "User is not authenticated", HTTP_UNAUTHORIZED),
+    ACCESS_DENIED("access.denied", "You do not have permission to access this resource", HTTP_FORBIDDEN),
     ;
 
     /**
