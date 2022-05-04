@@ -16,6 +16,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.github.academivillage.jcloud.errors.JCloudError.ACCESS_DENIED;
 import static com.github.academivillage.jcloud.errors.JCloudError.USER_NOT_AUTHENTICATED;
@@ -54,11 +55,17 @@ public class AuthorizationService {
     }
 
     /**
-     * @return The username of the API caller.
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
+     * @return The optional username of the current API caller.
      */
-    public String getUsername() {
-        return getClaims().getSubject();
+    public Optional<String> getUsername() {
+        try {
+            return Optional.of(getClaims().getSubject());
+        } catch (AppException e) {
+            if (e.getError() == USER_NOT_AUTHENTICATED)
+                return Optional.empty();
+
+            throw e;
+        }
     }
 
     /**

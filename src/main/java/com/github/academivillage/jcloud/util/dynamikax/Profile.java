@@ -48,6 +48,11 @@ public enum Profile {
     private final String storageBucketName;
 
     /**
+     * Represents the default username of the active profile. Mainly used as default entities auditor.
+     */
+    private final String defaultUsername = "iag.microservice";
+
+    /**
      * Finds the profile by (Spring) application's profile.
      *
      * @param appProfile Represents the (Spring) application's profile.

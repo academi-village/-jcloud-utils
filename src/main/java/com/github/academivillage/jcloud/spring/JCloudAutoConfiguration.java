@@ -159,7 +159,7 @@ public class JCloudAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AuditorAware<String> securityAuditorAware(AuthorizationService authService) {
-        return new SecurityAuditorAware(authService);
+    public AuditorAware<String> securityAuditorAware(AuthorizationService authService, Profile activeProfile) {
+        return new SecurityAuditorAware(authService, activeProfile);
     }
 }
