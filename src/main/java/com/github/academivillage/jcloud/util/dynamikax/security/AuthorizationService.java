@@ -65,7 +65,7 @@ public class AuthorizationService {
      * Checks the user access to the provided permission.
      *
      * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have requested permission.
+     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
      */
     public void checkAccess(Permission permission) {
         checkAccess(permission.getName(), null);
@@ -75,7 +75,7 @@ public class AuthorizationService {
      * Checks the user access to the provided permission.
      *
      * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have requested permission.
+     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
      */
     public void checkAccess(String permission) {
         checkAccess(permission, null);
@@ -85,7 +85,7 @@ public class AuthorizationService {
      * Checks the user access to the provided permission on the given study ID.
      *
      * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have requested permission.
+     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
      */
     public void checkAccess(Permission permission, @Nullable Long studyId) {
         checkAccess(permission.getName(), studyId);
@@ -95,7 +95,7 @@ public class AuthorizationService {
      * Checks the user access to the provided permission on the given study ID.
      *
      * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have requested permission.
+     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
      */
     public void checkAccess(String permission, @Nullable Long studyId) {
         val permissions = extractPermissions(getClaims());
@@ -155,11 +155,8 @@ public class AuthorizationService {
      * @return A map containing keys {@code globals} and {@code activities}.
      */
     private Map<String, Object> extractPermissions(Claims claims) {
-        if (claims.containsKey("vcp") && !claims.containsKey("permissions"))
-            return new VeryCompactJwtPermissions(((Map<String, String>) claims.get("vcp"))).decodeToMap();
-
         if (claims.containsKey("prm") && !claims.containsKey("permissions"))
-            return new CompactJwtPermissions(((Map<String, String>) claims.get("prm"))).decodeToMap();
+            return new VeryCompactJwtPermissions(((Map<String, String>) claims.get("prm"))).decodeToMap();
 
         List<String> globals       = (List<String>) ((Map) claims.get("permissions")).get("globals");
         List<Map>    activitiesMap = (List<Map>) ((Map) claims.get("permissions")).get("activities");

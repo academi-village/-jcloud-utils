@@ -122,13 +122,18 @@ public enum Permission {
     ;
 
     private static final Map<String, Permission> codeToPermissionMap = Arrays.stream(Permission.values())
-            .collect(toMap(it -> ALPHABET_ENCODER.encode(it.code), it -> it));
+            .collect(toMap(it -> it.code, it -> it));
 
     private static final Map<String, Permission> nameToPermissionMap = Arrays.stream(Permission.values())
             .collect(toMap(it -> it.name, it -> it));
 
     private final String name;
-    private final int    code;
+    private final String code;
+
+    Permission(String name, int code) {
+        this.name = name;
+        this.code = ALPHABET_ENCODER.encode(code);
+    }
 
     /**
      * Fetches the associated permission of the given {@code encodedCode}.

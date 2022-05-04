@@ -35,9 +35,9 @@ public class VeryCompactJwtPermissions {
      * Encapsulate the encoded permissions per each project.
      * <br>
      * Example of serialized key-value: <br>
-     * {@code {"prm": "F52|Jfn~60;N5;q1;upload.create.patient|JjA|JlX|K0v|K41|KGI~K;LYD;KbR;60;LbD;LQD|I27"}}
+     * {@code {"perms": "F52|Jfn~60;N5;q1;upload.create.patient|JjA|JlX|K0v|K41|KGI~K;LYD;KbR;60;LbD;LQD|I27"}}
      */
-    @JsonProperty("vcp")
+    @JsonProperty("perms")
     protected String permissions;
 
     public VeryCompactJwtPermissions(Map<String, String> map) {

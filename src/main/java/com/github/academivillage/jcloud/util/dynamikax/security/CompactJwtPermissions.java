@@ -45,7 +45,7 @@ public class CompactJwtPermissions {
      * Encapsulate the encoded permissions per each project.
      * <br>
      * Example of serialized key-value: <br>
-     * {@code {"prm": "F52|Jfn~60;N5;q1.7.U.Hc|JjA|JlX|K0v|K41|KGI~K.Sa.d;LYD;KbR;60;LbD;LQD|I27"}}
+     * {@code {"perms": "F52|Jfn~60;N5;q1.7.U.Hc|JjA|JlX|K0v|K41|KGI~K.Sa.d;LYD;KbR;60;LbD;LQD|I27"}}
      */
     @JsonProperty("perms")
     protected String permissions;
