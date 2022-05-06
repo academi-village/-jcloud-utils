@@ -1,24 +1,27 @@
 package com.github.academivillage.jcloud.util.dynamikax;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
  * @deprecated Must be removed
  */
 @Getter
+@Setter
 @ToString
-@RequiredArgsConstructor
 public class MSResponse<T> {
-    public final int    responseCode;
-    public final String responseMessage;
-    public final T      data;
+    public int    responseCode;
+    public String responseMessage;
+    public T      data;
 
-    public final String errorCode;
+    public String errorCode;
 
     @Deprecated
     public static <T> MSResponse<T> ok(T responseBody) {
-        return new MSResponse<>(200, "OK", responseBody, null);
+        return new MSResponse<T>()
+                .setResponseCode(200)
+                .setResponseMessage("OK")
+                .setData(responseBody);
     }
 }

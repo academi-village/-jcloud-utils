@@ -24,18 +24,20 @@ public class AppExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<MSResponse<Object>> handleAppExceptionAsMsResponse(AppException ex, WebRequest request) {
         AppError error      = ex.getError();
         val      httpStatus = HttpStatus.valueOf(error.getHttpStatusCode());
-        val      msResponse = new MSResponse<Object>(httpStatus.value(), error.getMessage(), null, error.getCode());
+        val msResponse = new MSResponse<Object>()
+                .setResponseCode(httpStatus.value())
+                .setResponseMessage(error.getMessage())
+                .setErrorCode(error.getCode());
 
         return new ResponseEntity<>(msResponse, httpStatus);
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<MSResponse<?>> handleExpiredJwtException(Throwable ex) {
-        val msResponse = new MSResponse<String>(
-                UNAUTHORIZED.value(),
-                "JWT token is expired",
-                null,
-                "user.not_authenticated");
+        val msResponse = new MSResponse<Object>()
+                .setResponseCode(UNAUTHORIZED.value())
+                .setResponseMessage("JWT token is expired")
+                .setErrorCode("user.not_authenticated");
 
         return new ResponseEntity<>(msResponse, UNAUTHORIZED);
     }
@@ -47,11 +49,11 @@ public class AppExceptionHandler extends ResponseEntityExceptionHandler {
         extMessage = extMessage + " : " + message;
         log.error(extMessage, ex);
 
-        val msResponse = new MSResponse<String>(
-                INTERNAL_SERVER_ERROR.value(),
-                message,
-                extMessage,
-                "server.internal_error");
+        val msResponse = new MSResponse<Object>()
+                .setResponseCode(INTERNAL_SERVER_ERROR.value())
+                .setResponseMessage(message)
+                .setData(extMessage)
+                .setErrorCode("server.internal_error");
 
         return new ResponseEntity<>(msResponse, INTERNAL_SERVER_ERROR);
     }
