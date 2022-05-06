@@ -15,4 +15,9 @@ public class WarmupController {
     public String warmup() {
         return "Warmup App";
     }
+
+    @GetMapping("/start")
+    public String start() {
+        return "App Started";
+    }
 }
