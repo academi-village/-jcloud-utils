@@ -74,7 +74,8 @@ public class SimpleAuthorizationService implements AuthorizationService {
     public Optional<String> getOptionalJwtToken() {
         val attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes == null) {
-            log.error("ServletRequestAttributes is null. It seems you called this from a non-request bounded thread");
+            val ex = new RuntimeException();
+            log.warn("ServletRequestAttributes is null. It seems you called this from a non-request bounded thread", ex);
 
             return Optional.empty();
         }
