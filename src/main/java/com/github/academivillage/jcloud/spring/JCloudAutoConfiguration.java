@@ -15,8 +15,8 @@ import com.github.academivillage.jcloud.util.dynamikax.AppExceptionHandler;
 import com.github.academivillage.jcloud.util.dynamikax.HttpClientConfiguration;
 import com.github.academivillage.jcloud.util.dynamikax.Profile;
 import com.github.academivillage.jcloud.util.dynamikax.msuser.MsUserClient;
-import com.github.academivillage.jcloud.util.dynamikax.security.AuthorizationService;
 import com.github.academivillage.jcloud.util.dynamikax.security.SecurityAuditorAware;
+import com.github.academivillage.jcloud.util.dynamikax.security.SimpleAuthorizationService;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.cloud.spring.core.GcpEnvironment;
 import com.google.cloud.spring.core.GcpEnvironmentProvider;
@@ -58,7 +58,7 @@ import java.util.function.Function;
         MsUserClient.class,
         AppExceptionHandler.class,
         HttpClientConfiguration.class,
-        AuthorizationService.class,
+        SimpleAuthorizationService.class,
         SecurityAuditorAware.class
 })
 public class JCloudAutoConfiguration {
@@ -159,7 +159,7 @@ public class JCloudAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AuditorAware<String> securityAuditorAware(AuthorizationService authService, Profile activeProfile) {
+    public AuditorAware<String> securityAuditorAware(SimpleAuthorizationService authService, Profile activeProfile) {
         return new SecurityAuditorAware(authService, activeProfile);
     }
 }

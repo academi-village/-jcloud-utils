@@ -1,173 +1,66 @@
 package com.github.academivillage.jcloud.util.dynamikax.security;
 
 import com.github.academivillage.jcloud.errors.AppException;
-import com.github.academivillage.jcloud.errors.JCloudError;
-import com.github.academivillage.jcloud.util.java.Maps;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtParser;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import com.github.academivillage.jcloud.errors.ProjectError;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static com.github.academivillage.jcloud.errors.JCloudError.ACCESS_DENIED;
-import static com.github.academivillage.jcloud.errors.JCloudError.USER_NOT_AUTHENTICATED;
+import static com.github.academivillage.jcloud.errors.ProjectError.USER_NOT_AUTHENTICATED;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class AuthorizationService {
-
-    private static final String BEARER = "Bearer ";
-
-    private final JwtParser jwtParser;
+public interface AuthorizationService {
 
     /**
      * Checks whether the user calling current API is authenticated?
      *
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
+     * @throws AppException with {@link ProjectError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
      */
-    public void checkIsAuthenticated() {
-        getClaims();
-    }
+    void checkIsAuthenticated();
 
     /**
-     * @return The user ID of the API caller.
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     */
-    public long getUserId() {
-        Claims claims = getClaims();
-        String userId = claims.getId();
-        try {
-            return Long.parseLong(userId);
-        } catch (NumberFormatException e) {
-            log.error("Can't convert userID {} to a long number", userId, e);
-            throw new AppException(USER_NOT_AUTHENTICATED);
-        }
-    }
-
-    /**
-     * @return The optional username of the current API caller.
-     */
-    public Optional<String> getUsername() {
-        try {
-            return Optional.of(getClaims().getSubject());
-        } catch (AppException e) {
-            if (e.getError() == USER_NOT_AUTHENTICATED)
-                return Optional.empty();
-
-            throw e;
-        }
-    }
-
-    /**
-     * Checks the user access to the provided permission.
+     * Checks the user access to at least one of the provided permissions.
      *
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
+     * @throws AppException with {@link ProjectError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
+     * @throws AppException with {@link ProjectError#ACCESS_DENIED} if the user doesn't have any of the required permissions.
      */
-    public void checkAccess(Permission permission) {
-        checkAccess(permission.getName(), null);
-    }
+    void checkAccess(Permission... permissions);
 
     /**
-     * Checks the user access to the provided permission.
+     * Checks the user access to at least one of the provided permissions on the given study ID.
      *
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
+     * @throws AppException with {@link ProjectError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
+     * @throws AppException with {@link ProjectError#ACCESS_DENIED} if the user doesn't have any of the required permissions.
      */
-    public void checkAccess(String permission) {
-        checkAccess(permission, null);
+    void checkAccess(long studyId, Permission... permissions);
+
+    /**
+     * @return The optional user details of the current API caller.
+     */
+    Optional<UserDetails> getOptionalUser();
+
+    /**
+     * @return The user details of the current API caller.
+     * @throws AppException with {@link ProjectError#USER_NOT_AUTHENTICATED} if the user is not authenticated.
+     */
+    default UserDetails getUser() {
+        return getOptionalUser().orElseThrow(USER_NOT_AUTHENTICATED::ex);
     }
 
     /**
-     * Checks the user access to the provided permission on the given study ID.
-     *
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
+     * @return The optional JWT token of the current API caller.
      */
-    public void checkAccess(Permission permission, @Nullable Long studyId) {
-        checkAccess(permission.getName(), studyId);
+    Optional<String> getOptionalJwtToken();
+
+    /**
+     * @return The JWT token of the current API caller.
+     * @throws AppException with {@link ProjectError#USER_NOT_AUTHENTICATED} if the user is not authenticated.
+     */
+    default String getJwtToken() {
+        return getOptionalJwtToken().orElseThrow(USER_NOT_AUTHENTICATED::ex);
     }
 
     /**
-     * Checks the user access to the provided permission on the given study ID.
-     *
-     * @throws AppException with {@link JCloudError#USER_NOT_AUTHENTICATED} if the user isn't authenticated.
-     * @throws AppException with {@link JCloudError#ACCESS_DENIED} if the user doesn't have required permission.
+     * @return The user details of the given JWT token.
+     * @throws AppException with {@link ProjectError#USER_NOT_AUTHENTICATED} if the JWT token is not valid.
      */
-    public void checkAccess(String permission, @Nullable Long studyId) {
-        val permissions = extractPermissions(getClaims());
-        if (studyId == null) {
-            val globals = (List<String>) permissions.get("globals");
-            if (!globals.contains(permission))
-                throw new AppException(ACCESS_DENIED);
-
-            return;
-        }
-
-        val activitiesMap = (List<Map>) permissions.get("activities");
-        for (Map jwtActivity : activitiesMap) {
-            val projectId  = (Integer) jwtActivity.get("projectId");
-            val activities = (List<String>) jwtActivity.get("activities");
-            if (projectId.longValue() == studyId && !activities.contains(permission))
-                throw new AppException(ACCESS_DENIED);
-        }
-    }
-
-    public String getJwtToken() {
-        val attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes == null)
-            throw new IllegalStateException("ServletRequestAttributes is null. It seems you called this from a non-request bounded thread");
-
-        val request       = attributes.getRequest();
-        val authorization = request.getHeader("Authorization");
-        if (!StringUtils.hasText(authorization))
-            throw new AppException(USER_NOT_AUTHENTICATED);
-
-        val jwtToken = authorization.replace(BEARER, "");
-
-        if (!StringUtils.hasText(jwtToken))
-            throw new AppException(USER_NOT_AUTHENTICATED);
-
-        return jwtToken;
-    }
-
-    private Claims getClaims() {
-        try {
-            Claims claims = jwtParser.parseClaimsJws(getJwtToken()).getBody();
-            if (claims == null)
-                throw new AppException(USER_NOT_AUTHENTICATED);
-
-            return claims;
-        } catch (Exception ex) {
-            if (ex instanceof AppException)
-                throw ex;
-
-            log.warn("Can't parse JWT token: {}", ex.getMessage());
-            throw new AppException(USER_NOT_AUTHENTICATED);
-        }
-    }
-
-    /**
-     * @param claims Encapsulates the claims of a JWT token including either {@code permissions} or {@code prm}.
-     * @return A map containing keys {@code globals} and {@code activities}.
-     */
-    private Map<String, Object> extractPermissions(Claims claims) {
-        if (claims.containsKey("prm") && !claims.containsKey("permissions"))
-            return new VeryCompactJwtPermissions(((Map<String, String>) claims.get("prm"))).decodeToMap();
-
-        List<String> globals       = (List<String>) ((Map) claims.get("permissions")).get("globals");
-        List<Map>    activitiesMap = (List<Map>) ((Map) claims.get("permissions")).get("activities");
-
-        return Maps.of("globals", globals, "activities", activitiesMap);
-    }
+    UserDetails getUser(String jwtToken);
 }

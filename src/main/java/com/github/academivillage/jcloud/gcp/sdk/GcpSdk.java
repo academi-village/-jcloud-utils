@@ -1,7 +1,7 @@
 package com.github.academivillage.jcloud.gcp.sdk;
 
 import com.github.academivillage.jcloud.errors.AppException;
-import com.github.academivillage.jcloud.errors.JCloudError;
+import com.github.academivillage.jcloud.errors.ProjectError;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.StorageScope;
@@ -204,6 +204,6 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
         return StreamSupport.stream(blobs.iterateAll().spliterator(), false)
                 .filter(it -> predicate.test(getFileName(it.getBlobId().getName())))
                 .findFirst()
-                .orElseThrow(() -> new AppException(JCloudError.FILE_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ProjectError.FILE_NOT_FOUND));
     }
 }

@@ -16,6 +16,9 @@ import static java.util.stream.Collectors.toList;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class VeryCompactJwtPermissions {
+    protected static final String ACTIVITIES = "activities";
+    protected static final String GLOBALS    = "globals";
+    protected static final String PROJECT_ID = "projectId";
 
     /**
      * Used to encode/decode numbers to compact them.
@@ -41,8 +44,8 @@ public class VeryCompactJwtPermissions {
     protected String permissions;
 
     public VeryCompactJwtPermissions(Map<String, String> map) {
-        this.globals     = map.get("globals");
-        this.permissions = map.get("activities");
+        this.globals     = map.get(GLOBALS);
+        this.permissions = map.get(ACTIVITIES);
     }
 
     /**
@@ -55,8 +58,8 @@ public class VeryCompactJwtPermissions {
         List<Map<String, Object>> activities = decodePermissionsToMap();
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("globals", globals);
-        result.put("activities", activities);
+        result.put(GLOBALS, globals);
+        result.put(ACTIVITIES, activities);
 
         return result;
     }
@@ -101,15 +104,15 @@ public class VeryCompactJwtPermissions {
     private Map<String, Object> decodePIdAndPermissionsToMap(String encodedPerms) {
         String[]            split       = encodedPerms.split("~");
         Map<String, Object> jwtActivity = new LinkedHashMap<>();
-        jwtActivity.put("projectId", ALPHABET_ENCODER.decode(split[0]));
+        jwtActivity.put(PROJECT_ID, ALPHABET_ENCODER.decode(split[0]));
 
         if (split.length == 1) {
-            jwtActivity.put("activities", Collections.emptyList());
+            jwtActivity.put(ACTIVITIES, Collections.emptyList());
             return jwtActivity;
         }
 
         List<String> acts = Arrays.stream(split[1].split(";")).map(this::decodePermission).collect(toList());
-        jwtActivity.put("activities", acts);
+        jwtActivity.put(ACTIVITIES, acts);
 
         return jwtActivity;
     }

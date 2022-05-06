@@ -1,5 +1,6 @@
 package com.github.academivillage.jcloud.errors;
 
+import lombok.val;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -37,8 +38,10 @@ public interface AppError {
         return null;
     }
 
-    default AppError withDetails(@Nullable Object details) {
-        return new ParameterizedError(getCode(), getMessage(), getHttpStatusCode(), getDetails(), null);
+    default AppError details(@Nullable Object details) {
+        val params = this instanceof ParameterizedError ? ((ParameterizedError) this).getParams() : null;
+
+        return new ParameterizedError(getCode(), getMessage(), getHttpStatusCode(), details, params);
     }
 
     /**
@@ -46,7 +49,14 @@ public interface AppError {
      *
      * @return A new AppError with the interpolated error message.
      */
-    default AppError withParams(@Nullable Object... params) {
+    default AppError params(@Nullable Object... params) {
         return new ParameterizedError(this, params);
+    }
+
+    /**
+     * Creates an exception from this error.
+     */
+    default AppException ex() {
+        return new AppException(this);
     }
 }

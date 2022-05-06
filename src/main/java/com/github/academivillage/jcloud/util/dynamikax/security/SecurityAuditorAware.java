@@ -3,7 +3,10 @@ package com.github.academivillage.jcloud.util.dynamikax.security;
 import com.github.academivillage.jcloud.util.dynamikax.Profile;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
+import lombok.var;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
@@ -16,8 +19,16 @@ public class SecurityAuditorAware implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
-        val username = authService.getUsername().orElse(activeProfile.getDefaultUsername());
+        var username = authService.getOptionalUser().map(UserDetails::getUsername).orElse(getUsernameFromContext());
+        username = StringUtils.hasText(username) ? username : activeProfile.getDefaultUsername();
 
         return Optional.of(username);
+    }
+
+    @Nullable
+    private String getUsernameFromContext() {
+        val principal = ThreadLocalContextHolder.getContext().getPrincipal();
+
+        return principal != null ? principal.getUsername() : null;
     }
 }

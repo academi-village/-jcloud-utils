@@ -1,7 +1,7 @@
 package com.github.academivillage.jcloud.gcp.appengine8;
 
 import com.github.academivillage.jcloud.errors.AppException;
-import com.github.academivillage.jcloud.errors.JCloudError;
+import com.github.academivillage.jcloud.errors.ProjectError;
 import com.github.academivillage.jcloud.gcp.CloudMetadata;
 import com.github.academivillage.jcloud.gcp.CloudStorage;
 import com.github.academivillage.jcloud.gcp.StorageScope;
@@ -100,7 +100,7 @@ public class GcpAeStandard8 implements CloudMetadata, CloudStorage {
     public String getProjectId() {
         val projectId = getAppEngineProjectIdFromAppId();
         if (projectId == null)
-            throw new AppException(JCloudError.PROJECT_ID_NOT_AVAILABLE);
+            throw new AppException(ProjectError.PROJECT_ID_NOT_AVAILABLE);
 
         return projectId;
     }

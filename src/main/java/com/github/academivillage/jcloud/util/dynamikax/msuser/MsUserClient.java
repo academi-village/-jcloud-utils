@@ -27,7 +27,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.validation.constraints.NotBlank;
 
-import static com.github.academivillage.jcloud.errors.JCloudError.MS_USER_LOGIN_FAILED;
+import static com.github.academivillage.jcloud.errors.ProjectError.MS_USER_LOGIN_FAILED;
 import static com.github.academivillage.jcloud.util.dynamikax.msuser.MsUserClient.MsUserProperties;
 import static java.util.Objects.requireNonNull;
 
@@ -81,7 +81,7 @@ public class MsUserClient {
                          || response.getBody().getResponseCode() != 200;
         if (failed) {
             log.error("Getting MsUser JWT token failed: {}", response);
-            throw new AppException(MS_USER_LOGIN_FAILED.withDetails(response));
+            throw new AppException(MS_USER_LOGIN_FAILED.details(response));
         }
 
         return new MsUserToken(response.getBody().getData().jwt);
