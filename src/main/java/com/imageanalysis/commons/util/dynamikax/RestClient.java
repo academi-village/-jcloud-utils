@@ -64,38 +64,120 @@ public class RestClient {
     private       Supplier<String>              tokenGenerator;
     private       Microservice                  microservice;
 
+    /**
+     * Create a request with {@link HttpMethod#GET} method.
+     *
+     * @param path              The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request get(String path, Object... uriVariableValues) {
         return request(GET, path, uriVariableValues);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#GET} method.
+     *
+     * @param path         The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request get(String path, Map<String, ?> uriVariables) {
         return request(GET, path, uriVariables);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#POST} method.
+     *
+     * @param path              The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request post(String path, Object... uriVariableValues) {
         return request(POST, path, uriVariableValues);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#POST} method.
+     *
+     * @param path         The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request post(String path, Map<String, ?> uriVariables) {
         return request(POST, path, uriVariables);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#PUT} method.
+     *
+     * @param path              The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request put(String path, Object... uriVariableValues) {
         return request(PUT, path, uriVariableValues);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#PUT} method.
+     *
+     * @param path         The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request put(String path, Map<String, ?> uriVariables) {
         return request(PUT, path, uriVariables);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#DELETE} method.
+     *
+     * @param path              The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request delete(String path, Object... uriVariableValues) {
         return request(DELETE, path, uriVariableValues);
     }
 
+    /**
+     * Create a request with {@link HttpMethod#DELETE} method.
+     *
+     * @param path         The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request delete(String path, Map<String, ?> uriVariables) {
         return request(DELETE, path, uriVariables);
     }
 
+    /**
+     * Create a request with the provided http method.
+     *
+     * @param httpMethod        The http method of the request.
+     * @param path              The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request request(@NonNull HttpMethod httpMethod, @NonNull String path, Object... uriVariableValues) {
         val url = getUrl(path);
         val expandedUrl = uriVariableValues.length == 0
@@ -105,6 +187,16 @@ public class RestClient {
         return new Request(this, httpMethod, expandedUrl);
     }
 
+    /**
+     * Create a request with the provided http method.
+     *
+     * @param httpMethod   The http method of the request.
+     * @param path         The path of the request. For Dynamika microservices in combination with {@link #microservice}
+     *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
+     *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
+     * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
+     * @return The request to set the headers and body and to execute the API call.
+     */
     public Request request(@NonNull HttpMethod httpMethod, @NonNull String path, @NonNull Map<String, ?> uriVariables) {
         val url = getUrl(path);
         val expandedUrl = uriVariables.isEmpty()
@@ -308,23 +400,33 @@ public class RestClient {
         @Nullable
         private Object body;
 
+        /**
+         * Sets the body of the request.
+         */
         public Request body(@Nullable Object body) {
             this.body = body;
             return this;
         }
 
+        /**
+         * Sets a header of the request.
+         */
         public Request header(String headerName, String value) {
             httpHeaders.set(headerName, value);
             return this;
         }
 
+        /**
+         * Adds the provided {@code headers} to the request current headers.
+         */
         public Request headers(MultiValueMap<String, String> headers) {
             httpHeaders.addAll(headers);
             return this;
         }
 
         /**
-         * Executes the remote API call without the result.
+         * Executes the remote API call and returns the raw response.
+         * The {@link Response} could be used to fetch extra information like response headers.
          */
         public Response execute() {
             return new Response(client.request(method, url, httpHeaders, body), client.jackson);
@@ -333,6 +435,8 @@ public class RestClient {
         /**
          * Executes the remote API call and returns the result.
          *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
          * @throws AppException with {@link ProjectError#REMOTE_SERVICE_FAILED} or the {@link GatewayError} if any error occurs.
          */
         public <T> T execute(Class<T> responseType) {
@@ -342,6 +446,8 @@ public class RestClient {
         /**
          * Executes the remote API call and returns the result.
          *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
          * @throws AppException with {@link ProjectError#REMOTE_SERVICE_FAILED} or the {@link GatewayError} if any error occurs.
          */
         public <T> T execute(TypeReference<T> responseType) {
@@ -350,6 +456,9 @@ public class RestClient {
 
         /**
          * Executes the remote API call and returns the result. If any error occurs, the default value will return.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
          */
         public <T> T execute(Class<T> responseType, T defaultValue) {
             return executeOptional(responseType).orElse(defaultValue);
@@ -357,6 +466,9 @@ public class RestClient {
 
         /**
          * Executes the remote API call and returns the result. If any error occurs, the default value will return.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
          */
         public <T> T execute(TypeReference<T> responseType, T defaultValue) {
             return executeOptional(responseType).orElse(defaultValue);
@@ -364,6 +476,9 @@ public class RestClient {
 
         /**
          * Executes the remote API call and returns an optional result.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
          */
         public <T> Optional<T> executeOptional(TypeReference<T> responseType) {
             return execute().intoOptional(responseType);
@@ -371,6 +486,9 @@ public class RestClient {
 
         /**
          * Executes the remote API call and returns an optional result.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
          */
         public <T> Optional<T> executeOptional(Class<T> responseType) {
             return execute().intoOptional(responseType);
@@ -382,20 +500,32 @@ public class RestClient {
         private final ResponseEntity<Map<String, Object>> responseEntity;
         private final Jackson                             jackson;
 
+        /**
+         * @return The response headers.
+         */
         public HttpHeaders headers() {
             return responseEntity.getHeaders();
         }
 
+        /**
+         * @return The response header of the given header name.
+         */
         public Optional<String> header(String headerName) {
             List<String> header = responseEntity.getHeaders().get(headerName);
 
             return Optional.ofNullable(header).flatMap(it -> it.stream().findFirst());
         }
 
+        /**
+         * @return The response body as a map.
+         */
         public Map<String, Object> bodyAsMap() {
             return requireNonNull(responseEntity.getBody());
         }
 
+        /**
+         * @return The response HTTP status.
+         */
         public HttpStatus statusCode() {
             return responseEntity.getStatusCode();
         }

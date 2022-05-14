@@ -3,6 +3,7 @@ package com.imageanalysis.commons.util.dynamikax.imagingproject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.imageanalysis.commons.util.dynamikax.RestClient;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.FlexibleConfigPayload;
 import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.VisitConfigPayload;
 import com.imageanalysis.commons.util.java.Maps;
 import lombok.val;
