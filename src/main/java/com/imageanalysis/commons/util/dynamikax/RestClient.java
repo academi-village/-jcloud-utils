@@ -1,6 +1,7 @@
 package com.imageanalysis.commons.util.dynamikax;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.imageanalysis.commons.errors.AppError;
 import com.imageanalysis.commons.errors.AppException;
 import com.imageanalysis.commons.errors.GatewayError;
@@ -9,33 +10,35 @@ import com.imageanalysis.commons.util.Jackson;
 import com.imageanalysis.commons.util.cache.Cache;
 import com.imageanalysis.commons.util.cache.ExpirableValue;
 import com.imageanalysis.commons.util.cache.InMemoryCache;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.MsImagingProjectClient;
 import com.imageanalysis.commons.util.dynamikax.msuser.MsUserClient;
 import com.imageanalysis.commons.util.java.Maps;
+import com.imageanalysis.commons.util.jooq.StopWatch;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
+import static java.net.HttpURLConnection.*;
 import static java.util.Objects.requireNonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.http.HttpMethod.*;
@@ -43,6 +46,27 @@ import static org.springframework.http.HttpMethod.*;
 /**
  * An opinionated Http client to call REST APIs and specifically Dynamika microservices,
  * but also could be used to call third-party APIs easily.
+ * Look at the {@link MsImagingProjectClient} as a reference usage example.
+ * Some ad-hoc example usages:
+ * <pre>
+ *     Duration expiration   = Duration.ofMinutes(30);
+ *     Class&lt;VisitConfigPayload> responseType = VisitConfigPayload.class;
+ *     VisitConfigPayload visitConfig = restClient.forMs(Microservice.MS_IMAGING_PROJECT)
+ *             .withCache(expiration)
+ *             .get("/api/visit-config/{visitConfigId}",Maps.of("visitConfigId", 1234))
+ *             .execute(responseType);
+ * </pre>
+ * and
+ * <pre>
+ *     List<Long> visitConfigIds = ...;
+ *     Duration expiration   = Duration.ofDays(7);
+ *     TypeReference&lt;Map&lt;Long, Instant>> responseType = new TypeReference&lt;Map&lt;Long, Instant>>() {};
+ *     Map&lt;Long, Instant> visitConfigsScanDate = restClient.forMs(Microservice.MS_IMAGING_PROJECT)
+ *             .withCache(expiration)
+ *             .put("/api/visit-config/get-scan-dates-by-visit-config-ids")
+ *             .body(visitConfigIds)
+ *             .execute(responseType);
+ * </pre>
  */
 @Slf4j
 @Component
@@ -71,9 +95,9 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request get(String path, Object... uriVariableValues) {
+    public Request get(@NonNull String path, Object... uriVariableValues) {
         return request(GET, path, uriVariableValues);
     }
 
@@ -84,9 +108,9 @@ public class RestClient {
      *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request get(String path, Map<String, ?> uriVariables) {
+    public Request get(@NonNull String path, @NonNull Map<String, ?> uriVariables) {
         return request(GET, path, uriVariables);
     }
 
@@ -97,9 +121,9 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request post(String path, Object... uriVariableValues) {
+    public Request post(@NonNull String path, Object... uriVariableValues) {
         return request(POST, path, uriVariableValues);
     }
 
@@ -110,9 +134,9 @@ public class RestClient {
      *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request post(String path, Map<String, ?> uriVariables) {
+    public Request post(@NonNull String path, @NonNull Map<String, ?> uriVariables) {
         return request(POST, path, uriVariables);
     }
 
@@ -123,9 +147,9 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request put(String path, Object... uriVariableValues) {
+    public Request put(@NonNull String path, Object... uriVariableValues) {
         return request(PUT, path, uriVariableValues);
     }
 
@@ -136,9 +160,9 @@ public class RestClient {
      *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request put(String path, Map<String, ?> uriVariables) {
+    public Request put(@NonNull String path, @NonNull Map<String, ?> uriVariables) {
         return request(PUT, path, uriVariables);
     }
 
@@ -149,9 +173,9 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request delete(String path, Object... uriVariableValues) {
+    public Request delete(@NonNull String path, Object... uriVariableValues) {
         return request(DELETE, path, uriVariableValues);
     }
 
@@ -162,9 +186,9 @@ public class RestClient {
      *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
-    public Request delete(String path, Map<String, ?> uriVariables) {
+    public Request delete(@NonNull String path, @NonNull Map<String, ?> uriVariables) {
         return request(DELETE, path, uriVariables);
     }
 
@@ -176,7 +200,7 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
     public Request request(@NonNull HttpMethod httpMethod, @NonNull String path, Object... uriVariableValues) {
         val url = getUrl(path);
@@ -195,7 +219,7 @@ public class RestClient {
      *                     it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                     But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariables The map of URI variables. Used to replace URI template variables with the values from a map.
-     * @return The request to set the headers and body and to execute the API call.
+     * @return The request to set the headers and body and then to execute the API call.
      */
     public Request request(@NonNull HttpMethod httpMethod, @NonNull String path, @NonNull Map<String, ?> uriVariables) {
         val url = getUrl(path);
@@ -223,8 +247,9 @@ public class RestClient {
     /**
      * Creates a new clone of the current client with the customized token generator.
      */
-    public RestClient with(@NonNull TokenType tokenType, @NonNull Supplier<String> tokenGenerator) {
-        return this.withTokenGenerator(() -> tokenType.name + tokenGenerator.get());
+    public RestClient with(@NonNull TokenType tokenType, @NonNull Function<RestClient, String> tokenGenerator) {
+        RestClient clientWithoutAuth = this.noAuth();
+        return this.withTokenGenerator(() -> tokenType.name + tokenGenerator.apply(clientWithoutAuth));
     }
 
     /**
@@ -246,27 +271,29 @@ public class RestClient {
         return expiration != null;
     }
 
-    private ResponseEntity<Map<String, Object>> request(HttpMethod httpMethod,
-                                                        String url,
-                                                        HttpHeaders headers,
-                                                        @Nullable Object body) {
-        String key = getRequestSignature(httpMethod, body, url);
+    private ResponseEntity<JsonNode> request(HttpMethod httpMethod,
+                                             String url,
+                                             HttpHeaders headers,
+                                             @Nullable Object body) {
+        String key = getRequestSignature(httpMethod, url, headers, body);
         //noinspection ConstantConditions
         if (isCacheEnabled())
             //noinspection ConstantConditions,unchecked
-            return (ResponseEntity<Map<String, Object>>) cache.get(key, () ->
+            return (ResponseEntity<JsonNode>) cache.get(key, () ->
                     toExpirable(doRequest(httpMethod, url, headers, body))).value;
 
         return doRequest(httpMethod, url, headers, body);
     }
 
-    private ResponseEntity<Map<String, Object>> doRequest(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
-        String requestSignature = getRequestSignature(httpMethod, body, url);
+    private ResponseEntity<JsonNode> doRequest(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
+        val    stopWatch        = new StopWatch();
+        String requestSignature = getRequestSignature(httpMethod, url, headers, body);
         try {
             val entity   = getHttpEntity(url, headers, body);
-            val type     = new ParameterizedTypeReference<Map<String, Object>>() {};
-            val response = restTemplate.exchange(url, httpMethod, entity, type);
-            log.info("Remote request executed: {} \nResponse: {}", requestSignature, response);
+            val response = restTemplate.exchange(url, httpMethod, entity, JsonNode.class);
+
+            val infoLog = String.format("Remote request executed: %s \nResponse: %s", requestSignature, response);
+            stopWatch.splitInfo(infoLog);
 
             int statusCode = response.getStatusCodeValue();
             boolean failed = statusCode < 200
@@ -282,32 +309,33 @@ public class RestClient {
         } catch (RestClientException ex) {
             log.error("Calling remote service failed. Request: {}", requestSignature, ex);
             val details = Maps.of("request", requestSignature, "exception", ex.getMessage());
+
             throw new AppException(ProjectError.REMOTE_SERVICE_FAILED.details(details));
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private AppError toAppError(String requestSignature, ResponseEntity<Map<String, Object>> response) {
-        val details = Maps.of("request", requestSignature, "response", response);
-        val body    = response.getBody();
-        if (body == null)
+    private AppError toAppError(String requestSignature, ResponseEntity<JsonNode> response) {
+        Object details = Maps.of("request", requestSignature, "response", response);
+        val    body    = response.getBody();
+        if (body == null || !body.isObject())
             return ProjectError.REMOTE_SERVICE_FAILED.details(details);
 
-        if (body.containsKey("httpStatusCode"))
+        if (body.has("httpStatusCode"))
             return jackson.convertValue(body, GatewayError.class);
 
-        if (body.containsKey("responseCode")) {
-            String errorCode = (String) body.getOrDefault("errorCode", "-");
-            String message   = (String) body.get("responseMessage");
+        if (body.has("responseCode")) {
+            String errorCode = body.get("errorCode").asText("NO_ERROR_CODE");
+            String message   = body.get("responseMessage").asText("NO_RESPONSE_MESSAGE");
+            details = body.has("data") && !body.get("data").isNull() ? body.get("data") : details;
             return new GatewayError(errorCode, message)
                     .setHttpStatusCode(response.getStatusCodeValue())
-                    .details(body.getOrDefault("data", details));
+                    .details(details);
         }
 
-        if (body.containsKey("errors")) {
-            val          error     = ((Collection<Map<String, Object>>) body.get("errors")).iterator().next();
-            final String errorCode = (String) error.get("error");
-            final String message   = (String) error.get("message");
+        if (body.has("errors")) {
+            val error     = body.get("errors").iterator().next();
+            val errorCode = error.get("error").asText("NOT_ERROR_CODE");
+            val message   = error.get("message").asText("NO_MESSAGE");
 
             return new GatewayError(errorCode, message)
                     .setHttpStatusCode(response.getStatusCodeValue())
@@ -359,8 +387,17 @@ public class RestClient {
     }
 
     @NotNull
-    private String getRequestSignature(HttpMethod httpMethod, @Nullable Object body, String url) {
-        return httpMethod + " " + url + "\n" + Optional.ofNullable(body).map(jackson::toJson).orElse("");
+    private String getRequestSignature(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
+        var headersStr = headers.toSingleValueMap().entrySet().stream()
+                .map(it -> it.getKey() + ": " + it.getValue()).collect(Collectors.joining("\n"));
+        if (StringUtils.hasText(headersStr))
+            headersStr = "\n" + headersStr;
+
+        var bodyStr = Optional.ofNullable(body).map(jackson::toJson).orElse("");
+        if (StringUtils.hasText(bodyStr))
+            bodyStr = "\n" + bodyStr;
+
+        return httpMethod + " " + url + headersStr + bodyStr;
     }
 
     @NotNull
@@ -417,7 +454,7 @@ public class RestClient {
         }
 
         /**
-         * Adds the provided {@code headers} to the request current headers.
+         * Adds the provided {@code headers} to the current request headers.
          */
         public Request headers(MultiValueMap<String, String> headers) {
             httpHeaders.addAll(headers);
@@ -497,8 +534,8 @@ public class RestClient {
 
     @RequiredArgsConstructor
     public static class Response {
-        private final ResponseEntity<Map<String, Object>> responseEntity;
-        private final Jackson                             jackson;
+        private final ResponseEntity<JsonNode> responseEntity;
+        private final Jackson                  jackson;
 
         /**
          * @return The response headers.
@@ -519,7 +556,7 @@ public class RestClient {
         /**
          * @return The response body as a map.
          */
-        public Map<String, Object> bodyAsMap() {
+        public JsonNode bodyAsJsonNode() {
             return requireNonNull(responseEntity.getBody());
         }
 
@@ -599,9 +636,25 @@ public class RestClient {
                 @Override
                 public Type getType() {return responseType;}
             };
-            val sourceValue = isMsResponse || !body.containsKey("responseCode") ? body : body.get("data");
+            val sourceValue = isMsResponse || !body.has("responseCode") ? body : body.get("data");
 
-            return jackson.convertValue(requireNonNull(sourceValue), typeRef);
+            val result = jackson.fromJson(requireNonNull(sourceValue), typeRef);
+            if (result instanceof MSResponse) {
+                val msResponse = (MSResponse<?>) result;
+                if (msResponse.responseCode != 200) {
+                    val errorCode = Optional.ofNullable(msResponse.errorCode).orElse("NO_ERROR_CODE");
+                    val message   = Optional.ofNullable(msResponse.responseMessage).orElse("NO_RESPONSE_MESSAGE");
+                    val details = Maps.of("data", msResponse.getData(),
+                            "responseCode", msResponse.responseCode);
+                    val gatewayError = new GatewayError(errorCode, message)
+                            .setHttpStatusCode(HTTP_BAD_GATEWAY)
+                            .details(details);
+
+                    throw new AppException(gatewayError);
+                }
+            }
+
+            return result;
         }
     }
 }

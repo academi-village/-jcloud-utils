@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -37,6 +38,7 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnMissingBean
 @EnableConfigurationProperties(MsUserProperties.class)
 @ConditionalOnProperty({"msuser.email", "msuser.password"})
 public class MsUserClient {
@@ -88,7 +90,7 @@ public class MsUserClient {
     }
 
     @NotNull
-    private String getBaseUrl() {
+    protected String getBaseUrl() {
         if (Strings.hasText(props.baseUrl))
             return props.baseUrl;
 

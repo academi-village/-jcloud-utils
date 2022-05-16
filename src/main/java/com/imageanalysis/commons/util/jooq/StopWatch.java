@@ -1,12 +1,10 @@
-package com.imageanalysis.commons.util;
-
-import lombok.extern.slf4j.Slf4j;
+package com.imageanalysis.commons.util.jooq;
 
 /**
  * A time measuring device
  */
-@Slf4j
 public final class StopWatch {
+    private static final JooqLogger log = JooqLogger.getLogger(StopWatch.class);
 
     private final long start;
     private       long split;
