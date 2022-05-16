@@ -16,9 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 @Setter
 @ToString
 public class MSResponse<T> {
-    public int    responseCode;
-    public String responseMessage;
-    public T      data;
+    public Integer responseCode;
+    public String  responseMessage;
+    public T       data;
 
     public String errorCode;
 

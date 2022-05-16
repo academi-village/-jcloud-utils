@@ -73,6 +73,30 @@ public class Jackson {
     /**
      * Deserialize the provided json string to the given type.
      *
+     * @param json Represents the JSON string
+     * @param type Represents the type to which the JSON string should deserialize.
+     * @return The de-serialized object of the given type.
+     */
+    @SneakyThrows
+    public <T> T fromJson(JsonNode json, Class<T> type) {
+        return mapper.treeToValue(json, type);
+    }
+
+    /**
+     * Converts the payment facilitator details field to PaymentFacilitatorDto.
+     *
+     * @param json json string
+     * @param type a type that the json string should deserialize to it.
+     * @return The de-serialized object of the given type.
+     */
+    @SneakyThrows
+    public <T> T fromJson(JsonNode json, TypeReference<T> type) {
+        return mapper.readValue(mapper.treeAsTokens(json), type);
+    }
+
+    /**
+     * Deserialize the provided json string to the given type.
+     *
      * @param json Represents the JSON in byte array format.
      * @param type Represents the type to which the JSON string should deserialize.
      * @return The de-serialized object of the given type.
