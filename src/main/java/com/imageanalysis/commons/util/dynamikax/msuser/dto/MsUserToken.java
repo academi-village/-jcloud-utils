@@ -1,4 +1,4 @@
-package com.imageanalysis.commons.util.dynamikax.msuser;
+package com.imageanalysis.commons.util.dynamikax.msuser.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.imageanalysis.commons.util.cache.Cache;

@@ -45,6 +45,6 @@ public class BearerToken implements Cache.Expirable {
 
         this.jwtToken  = jws;
         this.subject   = claims.getSubject();
-        this.expiresAt = claims.getExpiration().toInstant().minusSeconds(1800);
+        this.expiresAt = claims.getExpiration().toInstant().minusSeconds(120);
     }
 }

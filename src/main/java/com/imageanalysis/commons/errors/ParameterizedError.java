@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import lombok.var;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,7 +58,7 @@ public class ParameterizedError implements AppError {
 
     @Nullable
     private String substituteErrorMessage(AppError error, @Nullable Object @NotNull [] params) {
-        var errorMessage = error.getMessage();
+        String errorMessage = error.getMessage();
         if (errorMessage != null)
             for (int i = 0; i < params.length; i++)
                  errorMessage = errorMessage.replace("{" + i + "}", String.valueOf(params[i]));

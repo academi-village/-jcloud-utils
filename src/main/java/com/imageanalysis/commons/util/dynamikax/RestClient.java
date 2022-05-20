@@ -6,11 +6,13 @@ import com.imageanalysis.commons.errors.AppError;
 import com.imageanalysis.commons.errors.AppException;
 import com.imageanalysis.commons.errors.GatewayError;
 import com.imageanalysis.commons.errors.ProjectError;
+import com.imageanalysis.commons.spring.Profile;
 import com.imageanalysis.commons.util.Jackson;
 import com.imageanalysis.commons.util.cache.Cache;
 import com.imageanalysis.commons.util.cache.ExpirableValue;
 import com.imageanalysis.commons.util.cache.InMemoryCache;
-import com.imageanalysis.commons.util.dynamikax.imagingproject.MsImagingProjectClient;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.DefaultMsImagingProjectClient;
+import com.imageanalysis.commons.util.dynamikax.msuser.DefaultMsUserClient;
 import com.imageanalysis.commons.util.dynamikax.msuser.MsUserClient;
 import com.imageanalysis.commons.util.java.Maps;
 import com.imageanalysis.commons.util.jooq.StopWatch;
@@ -20,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
@@ -46,7 +47,7 @@ import static org.springframework.http.HttpMethod.*;
 /**
  * An opinionated Http client to call REST APIs and specifically Dynamika microservices,
  * but also could be used to call third-party APIs easily.
- * Look at the {@link MsImagingProjectClient} as a reference usage example.
+ * Look at the {@link DefaultMsImagingProjectClient} as a reference usage example.
  * Some ad-hoc example usages:
  * <pre>
  *     Duration expiration   = Duration.ofMinutes(30);
@@ -72,21 +73,31 @@ import static org.springframework.http.HttpMethod.*;
 @Component
 @With(PRIVATE)
 @AllArgsConstructor
-@ConditionalOnBean(MsUserClient.class)
-@RequiredArgsConstructor(onConstructor_ = {@Autowired})
+@ConditionalOnBean(DefaultMsUserClient.class)
 public class RestClient {
     private final Supplier<String> NO_OP_TOKEN_GENERATOR = () -> null;
 
     private final Profile      activeProfile;
     private final RestTemplate restTemplate;
-    private final Environment  env;
-    private final MsUserClient msUserClient;
     private final Jackson      jackson;
+    private final MsUserClient msUserClient;
 
     private final Cache<ExpirableValue<Object>> cache = new InMemoryCache<>();
     private       Duration                      expiration;
     private       Supplier<String>              tokenGenerator;
     private       Microservice                  microservice;
+
+    @Autowired
+    public RestClient(Profile activeProfile, RestTemplate restTemplate, Jackson jackson, MsUserClient msUserClient) {
+        this.activeProfile = activeProfile;
+        this.restTemplate  = restTemplate;
+        this.jackson       = jackson;
+        this.msUserClient  = msUserClient;
+
+        if (msUserClient instanceof DefaultMsUserClient) {
+            ((DefaultMsUserClient) this.msUserClient).setRestClient(this);
+        }
+    }
 
     /**
      * Create a request with {@link HttpMethod#GET} method.
@@ -95,6 +106,11 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     *                          Example:
+     * 	 <pre class="code">
+     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     * 	 restClient.get(path, &quot;hot&amp;cold&quot;);
+     * 	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request get(@NonNull String path, Object... uriVariableValues) {
@@ -121,6 +137,11 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     *                          Example:
+     * 	 <pre class="code">
+     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     * 	 restClient.post(path, &quot;hot&amp;cold&quot;);
+     * 	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request post(@NonNull String path, Object... uriVariableValues) {
@@ -147,6 +168,11 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     *                          Example:
+     * 	 <pre class="code">
+     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     * 	 restClient.put(path, &quot;hot&amp;cold&quot;);
+     * 	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request put(@NonNull String path, Object... uriVariableValues) {
@@ -173,6 +199,11 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     *                          Example:
+     * 	 <pre class="code">
+     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     * 	 restClient.request(HttpMethod.GET, path, &quot;hot&amp;cold&quot;);
+     * 	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request delete(@NonNull String path, Object... uriVariableValues) {
@@ -200,6 +231,11 @@ public class RestClient {
      *                          it could be only the path of the service API. For example: {@code /api/visit-config/{visitConfigId}}
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
+     *                          Example:
+     * 	 <pre class="code">
+     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     * 	 restClient.request(HttpMethod.GET, path, &quot;hot&amp;cold&quot;);
+     * 	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request request(@NonNull HttpMethod httpMethod, @NonNull String path, Object... uriVariableValues) {
@@ -357,12 +393,12 @@ public class RestClient {
     }
 
     private String getToken(String url) {
-        var domain = url.replace("http://", "").replace("https://", "");
-        val index  = domain.indexOf('/');
+        String domain = url.replace("http://", "").replace("https://", "");
+        val    index  = domain.indexOf('/');
         domain = domain.substring(0, index);
 
         //noinspection ConstantConditions
-        return (String) cache.get("TOKEN_" + domain, this::getExpirableToken).value;
+        return (String) cache.get("JWT_TOKEN_" + domain, this::getExpirableToken).value;
     }
 
     @NotNull
@@ -370,8 +406,7 @@ public class RestClient {
         String token = tokenGenerator.get();
         if (token.startsWith("Bearer ")) {
             val bearerToken = new BearerToken(token);
-            val expiresAt   = bearerToken.expiresAt.minusSeconds(120);
-            return new ExpirableValue<>(bearerToken.jwtToken, expiresAt);
+            return new ExpirableValue<>(bearerToken.jwtToken, bearerToken.expiresAt);
         }
 
         return new ExpirableValue<>(token, Duration.ofDays(30));
@@ -383,17 +418,17 @@ public class RestClient {
         if (path.contains("http://") || path.contains("https://") || microservice == null)
             return path;
 
-        return getBaseUrl(microservice) + fixPath(path);
+        return microservice.getAppEngineBaseUrl(activeProfile) + fixPath(path);
     }
 
     @NotNull
     private String getRequestSignature(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
-        var headersStr = headers.toSingleValueMap().entrySet().stream()
+        String headersStr = headers.toSingleValueMap().entrySet().stream()
                 .map(it -> it.getKey() + ": " + it.getValue()).collect(Collectors.joining("\n"));
         if (StringUtils.hasText(headersStr))
             headersStr = "\n" + headersStr;
 
-        var bodyStr = Optional.ofNullable(body).map(jackson::toJson).orElse("");
+        String bodyStr = Optional.ofNullable(body).map(jackson::toJson).orElse("");
         if (StringUtils.hasText(bodyStr))
             bodyStr = "\n" + bodyStr;
 
@@ -406,13 +441,6 @@ public class RestClient {
             return "/" + path;
 
         return path;
-    }
-
-    @NotNull
-    private String getBaseUrl(Microservice microservice) {
-        String defaultBaseUrl = microservice.getAppEngineBaseUrl(activeProfile);
-
-        return env.getProperty(microservice.getMsName() + ".base-url", defaultBaseUrl);
     }
 
     private <T> ExpirableValue<T> toExpirable(T result) {

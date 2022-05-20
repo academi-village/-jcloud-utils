@@ -1,5 +1,6 @@
 package com.imageanalysis.commons.util.dynamikax;
 
+import com.imageanalysis.commons.spring.Profile;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

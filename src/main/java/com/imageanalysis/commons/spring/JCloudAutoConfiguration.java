@@ -18,8 +18,7 @@ import com.imageanalysis.commons.gcp.sdk.GcpSdk;
 import com.imageanalysis.commons.util.Jackson;
 import com.imageanalysis.commons.util.dynamikax.AppExceptionHandler;
 import com.imageanalysis.commons.util.dynamikax.HttpClientConfiguration;
-import com.imageanalysis.commons.util.dynamikax.Profile;
-import com.imageanalysis.commons.util.dynamikax.msuser.MsUserClient;
+import com.imageanalysis.commons.util.dynamikax.msuser.DefaultMsUserClient;
 import com.imageanalysis.commons.util.dynamikax.security.SecurityAuditorAware;
 import com.imageanalysis.commons.util.dynamikax.security.SimpleAuthorizationService;
 import io.jsonwebtoken.JwtParser;
@@ -55,7 +54,7 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @Import({
-        MsUserClient.class,
+        DefaultMsUserClient.class,
         AppExceptionHandler.class,
         HttpClientConfiguration.class,
         SimpleAuthorizationService.class,
@@ -93,6 +92,7 @@ public class JCloudAutoConfiguration {
 
     @Bean
     public Profile activeProfile() {
+        Profile.env = env;
         return Arrays.stream(env.getActiveProfiles())
                 .map(Profile::fromAppProfile)
                 .findFirst()

@@ -1,8 +1,11 @@
-package com.imageanalysis.commons.util.dynamikax;
+package com.imageanalysis.commons.spring;
 
 import com.imageanalysis.commons.gcp.sdk.GcpSdk;
+import com.imageanalysis.commons.util.dynamikax.Microservice;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
+import org.springframework.core.env.Environment;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -12,7 +15,6 @@ import java.util.Optional;
  *
  * @author Younes Rahimi
  */
-@Getter
 @RequiredArgsConstructor
 public enum Profile {
     LOCAL("develop", "local", "dynamikax-dev", "develop-dot-", "dynamikax-storage-eu"),
@@ -20,6 +22,8 @@ public enum Profile {
     UAT("uat", "uat", "dynamikax-dev", "uat-dot-", "dynamikax-storage-eu-uat"),
     PROD("master", "prod", "dynamikax", "", "dynamikax-storage-eu-prd"),
     ;
+
+    static Environment env;
 
     /**
      * Represents the branch name in Git repository.
@@ -29,6 +33,7 @@ public enum Profile {
     /**
      * Represents the (Spring) application's profile.
      */
+    @Getter
     private final String appProfile;
 
     /**
@@ -70,7 +75,8 @@ public enum Profile {
      * Example: {@code https://develop-dot-msuser-dot-dynamikax-dev.ew.r.appspot.com }
      */
     public String getAppEngineBaseUrl(String microserviceName) {
-        return "https://" + baseUrlPrefix + microserviceName + "-dot-" + projectId + ".ew.r.appspot.com";
+        val defaultBaseUrl = "https://" + baseUrlPrefix + microserviceName + "-dot-" + projectId + ".ew.r.appspot.com";
+        return env == null ? defaultBaseUrl : env.getProperty(microserviceName + ".base-url", defaultBaseUrl);
     }
 
     /**
@@ -80,5 +86,25 @@ public enum Profile {
      */
     public String getAppEngineBaseUrl(Microservice microservice) {
         return getAppEngineBaseUrl(microservice.getMsName());
+    }
+
+    public String getBranchName() {
+        return env == null ? branchName : env.getProperty("profile.branch-name", branchName);
+    }
+
+    public String getProjectId() {
+        return env == null ? projectId : env.getProperty("profile.project-id", projectId);
+    }
+
+    public String getBaseUrlPrefix() {
+        return env == null ? baseUrlPrefix : env.getProperty("profile.base-url-prefix", baseUrlPrefix);
+    }
+
+    public String getStorageBucketName() {
+        return env == null ? storageBucketName : env.getProperty("profile.storage-bucket-name", storageBucketName);
+    }
+
+    public String getDefaultUsername() {
+        return env == null ? defaultUsername : env.getProperty("profile.default-username", defaultUsername);
     }
 }

@@ -12,7 +12,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
-import lombok.var;
 
 /**
  * Responsible to serialize/deserialize the objects into/from JSON.
@@ -130,7 +129,7 @@ public class Jackson {
      */
     @SneakyThrows
     public JsonNode readPath(byte[] json, String fieldPath) {
-        var node = mapper.readTree(json);
+        JsonNode node = mapper.readTree(json);
         for (String field : fieldPath.split("\\."))
             node = node.get(field);
         return node;

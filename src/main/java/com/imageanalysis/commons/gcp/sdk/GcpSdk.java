@@ -13,7 +13,6 @@ import com.imageanalysis.commons.gcp.StorageScope;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import lombok.var;
 
 import java.io.File;
 import java.net.URL;
@@ -69,7 +68,7 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
      * Read more: <a href="https://cloud.google.com/docs/authentication/production#passing_variable">Passing credentials via environment variable</a>
      */
     public GcpSdk() {
-        var projectId = ServiceOptions.getDefaultProjectId();
+        String projectId = ServiceOptions.getDefaultProjectId();
         log.debug("Initiating GcpSdk by default constructor. ProjectId: {}", projectId);
         this.storage = "no_app_id".equals(projectId)
                        ? StorageOptions.newBuilder().build().getService()

@@ -1,7 +1,6 @@
 package com.imageanalysis.commons.util;
 
 import lombok.val;
-import lombok.var;
 
 public class FileUtil {
 
@@ -15,9 +14,9 @@ public class FileUtil {
     }
 
     public static String getFileNameFromUrl(String storagePath) {
-        int lastSlashIdx = storagePath.lastIndexOf('/');
-        var fileName     = lastSlashIdx <= 0 ? storagePath : storagePath.substring(lastSlashIdx + 1);
-        int qmIndex      = fileName.indexOf('?');
+        int    lastSlashIdx = storagePath.lastIndexOf('/');
+        String fileName     = lastSlashIdx <= 0 ? storagePath : storagePath.substring(lastSlashIdx + 1);
+        int    qmIndex      = fileName.indexOf('?');
 
         val isUrl             = storagePath.startsWith("https://") || storagePath.startsWith("http://");
         val questionMarkFound = qmIndex > 0;

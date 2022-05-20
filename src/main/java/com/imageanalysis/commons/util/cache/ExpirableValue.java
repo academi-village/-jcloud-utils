@@ -18,4 +18,9 @@ public class ExpirableValue<T> implements Cache.Expirable {
         this.value     = value;
         this.expiresAt = Instant.now().plus(expiration);
     }
+
+    public ExpirableValue(T value) {
+        this.value     = value;
+        this.expiresAt = value instanceof Cache.Expirable ? ((Cache.Expirable) value).getExpiresAt() : Instant.now();
+    }
 }
