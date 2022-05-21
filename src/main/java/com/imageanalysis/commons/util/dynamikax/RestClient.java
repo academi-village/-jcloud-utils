@@ -494,7 +494,8 @@ public class RestClient {
          * The {@link Response} could be used to fetch extra information like response headers.
          */
         public Response execute() {
-            return new Response(client.request(method, url, httpHeaders, body), client.jackson);
+            String key = client.getRequestSignature(method, url, httpHeaders, body);
+            return new Response(client.request(method, url, httpHeaders, body), key, client);
         }
 
         /**
@@ -654,7 +655,8 @@ public class RestClient {
     @RequiredArgsConstructor
     public static class Response {
         private final ResponseEntity<JsonNode> responseEntity;
-        private final Jackson                  jackson;
+        private final String                   cacheKey;
+        private final RestClient               client;
 
         /**
          * @return The response headers.
@@ -699,6 +701,7 @@ public class RestClient {
                 val message      = body.get("responseMessage").asText("NO_RESPONSE_MESSAGE");
                 val details      = Maps.of("data", body.get("data"), "responseCode", responseCode);
                 val gatewayError = new GatewayError(errorCode, message, HTTP_BAD_GATEWAY).details(details);
+                client.cache.evict(cacheKey);
 
                 throw new AppException(gatewayError);
             }
@@ -787,7 +790,7 @@ public class RestClient {
             //noinspection unchecked
             T result = responseType == String.class || responseType == CharSequence.class
                        ? (T) sourceValue.toString()
-                       : jackson.fromJson(requireNonNull(sourceValue), typeRef);
+                       : client.jackson.fromJson(requireNonNull(sourceValue), typeRef);
 
             if (result instanceof MSResponse) {
                 val msResponse = (MSResponse<?>) result;
@@ -797,6 +800,7 @@ public class RestClient {
                     val details = Maps.of("data", msResponse.getData(),
                             "responseCode", msResponse.responseCode);
                     val gatewayError = new GatewayError(errorCode, message, HTTP_BAD_GATEWAY).details(details);
+                    client.cache.evict(cacheKey);
 
                     throw new AppException(gatewayError);
                 }

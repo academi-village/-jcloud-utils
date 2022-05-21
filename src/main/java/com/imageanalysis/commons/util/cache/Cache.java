@@ -1,5 +1,6 @@
 package com.imageanalysis.commons.util.cache;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
@@ -52,5 +53,10 @@ public interface Cache<T> {
          * Represents the expiration date in the future.
          */
         Instant getExpiresAt();
+
+        @JsonIgnore
+        default boolean isExpired() {
+            return Instant.now().isAfter(getExpiresAt());
+        }
     }
 }
