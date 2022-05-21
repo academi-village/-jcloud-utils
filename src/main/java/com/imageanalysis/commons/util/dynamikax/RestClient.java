@@ -87,7 +87,7 @@ public class RestClient {
 
     private final Cache<ExpirableValue<Object>>    cache                 = new InMemoryCache<>();
     private       Duration                         expiration;
-    private       Supplier<String>                 authorizationProvider = () -> "Bearer " + msUserClient.getJwtToken();
+    private       Supplier<String>                 authorizationProvider = this::getAuthorizationValue;
     private       AuthorizationKeyProvider<Object> cacheKeyProvider      = this::defaultCacheKey;
     private       Microservice                     microservice;
 
@@ -808,5 +808,10 @@ public class RestClient {
 
             return result;
         }
+    }
+
+    @NotNull
+    private String getAuthorizationValue() {
+        return "Bearer " + msUserClient.getJwtToken();
     }
 }

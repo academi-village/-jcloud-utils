@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @deprecated Must be removed
+ * @deprecated Do NOT use this if you could. Must be removed.
  */
 @Slf4j
 @Getter

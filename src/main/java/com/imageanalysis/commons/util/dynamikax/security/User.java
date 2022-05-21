@@ -8,6 +8,6 @@ import lombok.ToString;
 @ToString
 @RequiredArgsConstructor
 public class User implements UserDetails {
-    private final long   Id;
+    private final Long   id;
     private final String username;
 }

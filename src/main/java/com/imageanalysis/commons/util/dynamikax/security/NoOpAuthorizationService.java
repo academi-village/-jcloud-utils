@@ -12,7 +12,7 @@ import java.util.Optional;
 @ConditionalOnProperty(value = "authorization.enable", havingValue = "false")
 public class NoOpAuthorizationService extends SimpleAuthorizationService {
 
-    private final User fakeUser = new User(0, "__fake_user__");
+    private final User fakeUser = new User(0L, "__fake_user__");
 
     public NoOpAuthorizationService(JwtParser jwtParser) {
         super(jwtParser);
