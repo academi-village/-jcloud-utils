@@ -25,7 +25,7 @@ public enum ProjectError implements AppError {
     READING_NOT_FOUND("reading.not_found", "The reading {} not found", HTTP_NOT_FOUND),
     READING_INVALID_STATUS_TRANSITION("reading.invalid_status_transition", "The reading status transition is not valid", HTTP_PRECON_FAILED),
     CAN_NOT_FOUND("resource.not_found", "{0} {1} cannot be found", HTTP_NOT_FOUND),
-    ENDPOINT_ID_NOT_FOUND("endpoint_id.not_found", "The endpoint ID of {} not found", HTTP_INTERNAL_ERROR),
+    ENDPOINT_ID_NOT_FOUND("endpoint_id.not_found", "The endpoint ID {} not found", HTTP_INTERNAL_ERROR),
     ;
 
     /**

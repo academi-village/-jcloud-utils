@@ -10,7 +10,7 @@ import java.util.List;
 
 @Setter
 @ToString
-public class SeriesPayload {
+public class SeriesDto {
 
     public Long         id;
     //    private VisitConfigPayload visitConfig;

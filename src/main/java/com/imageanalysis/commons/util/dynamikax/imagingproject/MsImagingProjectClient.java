@@ -1,9 +1,9 @@
 package com.imageanalysis.commons.util.dynamikax.imagingproject;
 
-import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.FlexibleConfigPayload;
-import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.PatientPayload;
-import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.VisitConfigPayload;
-import lombok.NonNull;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.FlexibleConfigDto;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.PatientDto;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.SiteConfigDto;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.VisitConfigDto;
 import org.springframework.core.env.Environment;
 
 import java.time.Instant;
@@ -13,9 +13,9 @@ import java.util.Set;
 
 public interface MsImagingProjectClient {
 
-    Map<Long, Instant> fetchVisitConfigsScanDate(@NonNull List<Long> visitConfigIds);
+    Map<Long, Instant> fetchVisitConfigsScanDate(List<Long> visitConfigIds);
 
-    VisitConfigPayload fetchVisitConfig(long visitConfigId);
+    VisitConfigDto fetchVisitConfig(long visitConfigId);
 
     /**
      * Fetches the reading configs for the give studyId. The endpoint name would be fetched from {@link Environment}.
@@ -23,14 +23,18 @@ public interface MsImagingProjectClient {
      *
      * @return The all flexible configs for the given studyId.
      */
-    List<FlexibleConfigPayload> fetchReadingConfigs(long studyId);
+    Set<FlexibleConfigDto> fetchReadingConfigs(long studyId);
 
     /**
      * Fetches the reading configs for the give studyId.
      *
      * @return The all flexible configs for the given studyId.
      */
-    List<FlexibleConfigPayload> fetchReadingConfigs(long studyId, @NonNull String endpointName);
+    Set<FlexibleConfigDto> fetchReadingConfigs(long studyId, String endpointName);
 
-    List<PatientPayload> fetchPatientsByIds(Set<Long> patientIds);
+    SiteConfigDto fetchSiteConfig(long studyId);
+
+    Set<PatientDto> fetchPatientsByIds(Set<Long> patientIds);
+
+    PatientDto fetchPatientById(long patientId);
 }

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.api.gax.core.CredentialsProvider;
-import com.google.cloud.spring.core.GcpEnvironment;
 import com.google.cloud.spring.core.GcpEnvironmentProvider;
 import com.google.cloud.spring.core.GcpProjectIdProvider;
 import com.google.cloud.storage.Storage;
@@ -130,14 +129,17 @@ public class JCloudAutoConfiguration {
                                @Value("${app.cloudkey.storage.path:dynamikax/cloudKeys/jwtRS256.key.pub}") String cloudKeyStoragePath,
                                @Value("${app.cloudkey.local.path:}") String cloudKeyLocalPath) {
         val gcpEnv = gcpEnvironmentProvider.getCurrentEnvironment();
-        log.debug("Gcp Environment: {} - Active Profile: {}", gcpEnv, activeProfile);
+        log.info("GCP Environment: {} - Active Profile: {}", gcpEnv, activeProfile);
         File cloudKeyFile;
-        if (gcpEnv != GcpEnvironment.UNKNOWN) {
+        val bucketName = StringUtils.hasText(cloudKeyBucketName) ? cloudKeyBucketName :
+                         (activeProfile == Profile.PROD ? "dynamikax.appspot.com" : "dynamikax-dev.appspot.com");
+        try {
             // Production
-            val bucketName = StringUtils.hasText(cloudKeyBucketName) ? cloudKeyBucketName :
-                             (activeProfile == Profile.PROD ? "dynamikax.appspot.com" : "dynamikax-dev.appspot.com");
             cloudKeyFile = storage.downloadInFile(bucketName, cloudKeyStoragePath);
-        } else {
+        } catch (Exception ex) {
+            log.error("Error on fetching the public key from cloud. bucketName: {}, cloudKeyStoragePath: {} ",
+                    bucketName, cloudKeyStoragePath);
+
             // Local development server
             Assert.hasText(cloudKeyLocalPath, "The <app.cloudkey.local.path> is not set for local development. " +
                                               "Example path: </Users/username/projects/ia-grp/data/CloudKey/jwtRS256.key.pub>. " +

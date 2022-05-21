@@ -5,9 +5,7 @@ import lombok.ToString;
 
 @Setter
 @ToString
-public class PatientPayload {
-
+public class FlexibleConfigModalityDto {
     public Long   id;
-    public String patientCode;
-//    public Set<VisitConfigPayload> visitConfigs = new HashSet<>(); TODO YR: Check this
+    public String name;
 }

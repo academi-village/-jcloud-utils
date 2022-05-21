@@ -1,15 +1,17 @@
 package com.imageanalysis.commons.util.dynamikax.msuser;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.imageanalysis.commons.util.cache.Cache;
 import com.imageanalysis.commons.util.cache.InMemoryCache;
 import com.imageanalysis.commons.util.dynamikax.Microservice;
 import com.imageanalysis.commons.util.dynamikax.RestClient;
 import com.imageanalysis.commons.util.dynamikax.msuser.dto.MsUserToken;
+import com.imageanalysis.commons.util.dynamikax.msuser.dto.UserDto;
+import com.imageanalysis.commons.util.java.Lists;
 import com.imageanalysis.commons.util.java.Maps;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,6 +22,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotBlank;
 import java.util.List;
+import java.util.Optional;
 
 import static com.imageanalysis.commons.util.dynamikax.msuser.DefaultMsUserClient.MsUserProperties;
 import static lombok.AccessLevel.PRIVATE;
@@ -54,10 +57,10 @@ public class DefaultMsUserClient implements MsUserClient {
         return token.jwtToken;
     }
 
-    @Nullable
-    public String getUserName(List<Long> userIds) throws Exception {
-        val path = "/api/user/get-users-by-ids";
-        return restClient.put(path).body(userIds).execute().asJsonNode().findPath("userName").asText();
+    public Optional<UserDto> fetchUser(Long userId) {
+        val path      = "/api/user/get-users-by-ids";
+        val usersType = new TypeReference<List<UserDto>>() {};
+        return restClient.put(path).body(Lists.of(userId)).execute(usersType).stream().findFirst();
     }
 
     @NotNull

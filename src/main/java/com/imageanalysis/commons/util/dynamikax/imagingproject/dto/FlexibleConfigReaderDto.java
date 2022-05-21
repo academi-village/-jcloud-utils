@@ -1,11 +1,12 @@
 package com.imageanalysis.commons.util.dynamikax.imagingproject.dto;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 @Setter
 @ToString
-public class FlexibleConfigModalityPayload {
-    public Long   id;
-    public String name;
+@Getter(onMethod_ = @Deprecated)
+public class FlexibleConfigReaderDto {
+    public Long id;
 }

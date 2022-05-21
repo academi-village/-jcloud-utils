@@ -1,5 +1,6 @@
 package com.imageanalysis.commons.util.dynamikax.imagingproject.dto;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
@@ -8,19 +9,20 @@ import java.util.Set;
 
 @Setter
 @ToString
-public class VisitConfigPayload implements Comparable<VisitConfigPayload> {
+@Getter(onMethod_ = @Deprecated)
+public class VisitConfigDto implements Comparable<VisitConfigDto> {
 
-    public Long               id;
-    public PatientPayload     patient;
-    public VisitPayload       visit;
+    public Long         id;
+    public PatientDto   patient;
+    public VisitPayload visit;
     public String             visitName;
     public String             visitBlindName;
     public VisitType          visitType;
-    public Boolean            noUploads;
-    public Set<SeriesPayload> series;
+    public Boolean        noUploads;
+    public Set<SeriesDto> series;
 
     @Override
-    public int compareTo(VisitConfigPayload other) {
+    public int compareTo(VisitConfigDto other) {
         if (visit == other.visit) {
             return 0;
         }

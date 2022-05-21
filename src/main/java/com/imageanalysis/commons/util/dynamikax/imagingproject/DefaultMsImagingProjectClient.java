@@ -4,9 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.imageanalysis.commons.util.dynamikax.Microservice;
 import com.imageanalysis.commons.util.dynamikax.RestClient;
-import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.FlexibleConfigPayload;
-import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.PatientPayload;
-import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.VisitConfigPayload;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.FlexibleConfigDto;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.PatientDto;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.SiteConfigDto;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.dto.VisitConfigDto;
 import com.imageanalysis.commons.util.java.Maps;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -30,12 +31,6 @@ import static com.imageanalysis.commons.errors.ProjectError.ENDPOINT_ID_NOT_FOUN
 @Component
 @ConditionalOnMissingBean(MsImagingProjectClient.class)
 public class DefaultMsImagingProjectClient implements MsImagingProjectClient {
-
-    private static final String   PATIENTS_BY_IDS_URL         = "/api/patient/get-patients-by-ids";
-    private static final String   VISIT_CONFIG_URL            = "/api/visit-config/{visitConfigId}";
-    private static final String   ENDPOINT_ALL_URL            = "/api/endpoint/retrieve-all";
-    private static final String   READING_CONFIG_FLEXIBLE_URL = "/api/reading-config-flexible/get-active-by-study-id-and-endpoint-id/{studyId}/{endpointId}";
-    private static final String   SCAN_DATE_URL               = "/api/visit-config/get-scan-dates-by-visit-config-ids";
     private static final Duration LONG_EXPIRATION             = Duration.ofDays(7);
 
     private final RestClient  restClient;
@@ -50,49 +45,68 @@ public class DefaultMsImagingProjectClient implements MsImagingProjectClient {
     public Map<Long, Instant> fetchVisitConfigsScanDate(@NonNull List<Long> visitConfigIds) {
         log.debug("Fetching visit configs scan date of visitConfigIds: {}", visitConfigIds);
         val responseType = new TypeReference<Map<Long, Instant>>() {};
+        val path         = "/api/visit-config/get-scan-dates-by-visit-config-ids";
 
-        return restClient.withCache(LONG_EXPIRATION).put(SCAN_DATE_URL).body(visitConfigIds).execute(responseType);
+        return restClient.withCache(LONG_EXPIRATION).put(path).body(visitConfigIds).execute(responseType);
     }
 
     @Override
-    public VisitConfigPayload fetchVisitConfig(long visitConfigId) {
+    public VisitConfigDto fetchVisitConfig(long visitConfigId) {
         log.debug("Fetching visit config of visitConfigId: {}", visitConfigId);
-        val      params     = Maps.of("visitConfigId", visitConfigId + "");
-        Duration expiration = Duration.ofMinutes(30);
-        return restClient.withCache(expiration).get(VISIT_CONFIG_URL, params).execute(VisitConfigPayload.class);
+        val params     = Maps.of("visitConfigId", visitConfigId + "");
+        val expiration = Duration.ofMinutes(30);
+        val path       = "/api/visit-config/{visitConfigId}";
+        return restClient.withCache(expiration).get(path, params).execute(VisitConfigDto.class);
     }
 
     @Override
-    public List<FlexibleConfigPayload> fetchReadingConfigs(long studyId) {
+    public Set<FlexibleConfigDto> fetchReadingConfigs(long studyId) {
         val endpointName = env.getRequiredProperty("app.endpoint.name");
 
         return fetchReadingConfigs(studyId, endpointName);
     }
 
     @Override
-    public List<FlexibleConfigPayload> fetchReadingConfigs(long studyId, @NonNull String endpointName) {
+    public Set<FlexibleConfigDto> fetchReadingConfigs(long studyId, @NonNull String endpointName) {
         log.debug("Fetching reading (flexible) config of studyId {} and endpointName: {}", studyId, endpointName);
         val params = Maps.of(
                 "studyId", studyId + "",
                 "endpointId", fetchEndpointId(endpointName)
         );
-        val responseType = new TypeReference<List<FlexibleConfigPayload>>() {};
+        val responseType = new TypeReference<Set<FlexibleConfigDto>>() {};
+        val path         = "/api/reading-config-flexible/get-active-by-study-id-and-endpoint-id/{studyId}/{endpointId}";
 
-        return restClient.get(READING_CONFIG_FLEXIBLE_URL, params).execute(responseType);
+        return restClient.get(path, params).execute(responseType);
     }
 
     @Override
-    public List<PatientPayload> fetchPatientsByIds(Set<Long> patientIds) {
-        log.debug("Fetching patients of IDs: {}", patientIds);
-        val responseType = new TypeReference<List<PatientPayload>>() {};
+    public SiteConfigDto fetchSiteConfig(long studyId) {
+        val expiration = Duration.ofHours(2);
+        val path       = "/api/site-config/get-site-configs-by-study-id/{studyId}";
+        return restClient.withCache(expiration).get(path, studyId).execute(SiteConfigDto.class);
+    }
 
-        return restClient.withCache().put(PATIENTS_BY_IDS_URL).body(patientIds).execute(responseType);
+    @Override
+    public Set<PatientDto> fetchPatientsByIds(Set<Long> patientIds) {
+        log.debug("Fetching patients of IDs: {}", patientIds);
+        val responseType = new TypeReference<Set<PatientDto>>() {};
+        val path         = "/api/patient/get-patients-by-ids";
+
+        return restClient.withCache().put(path).body(patientIds).execute(responseType);
+    }
+
+    @Override
+    public PatientDto fetchPatientById(long patientId) {
+        val expiration = Duration.ofDays(1);
+        val path       = "/api/patient/{patientId}";
+        return restClient.withCache(expiration).get(path, patientId).execute(PatientDto.class);
     }
 
     @Nullable
     private Long fetchEndpointId(String endpointName) {
         log.debug("Fetching endpointId of endpointName: {}", endpointName);
-        val jsonNode = restClient.withCache(LONG_EXPIRATION).get(ENDPOINT_ALL_URL).execute().unwrappedBody();
+        val path     = "/api/endpoint/retrieve-all";
+        val jsonNode = restClient.withCache(LONG_EXPIRATION).get(path).execute().asJsonNode();
 
         return extractEndpointId(jsonNode, endpointName);
     }

@@ -35,6 +35,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -495,6 +498,52 @@ public class RestClient {
         }
 
         /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public CompletableFuture<Response> executeAsync() {
+            return CompletableFuture.supplyAsync(this::execute);
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public <T> CompletableFuture<T> executeAsync(Function<JsonNode, T> responseMapper) {
+            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> responseMapper.apply(it.asJsonNode()));
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public <T> CompletableFuture<T> executeAsync(Class<T> responseType) {
+            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> it.into(responseType));
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public <T> CompletableFuture<T> executeAsync(TypeReference<T> responseType) {
+            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> it.into(responseType));
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the given executor.
+         *
+         * @param executor the executor to use for asynchronous execution
+         * @return The completable future of API call response.
+         */
+        public CompletableFuture<Response> executeAsync(Executor executor) {
+            return CompletableFuture.supplyAsync(this::execute, executor);
+        }
+
+        /**
          * Executes the remote API call and returns the result.
          *
          * @param <T>          Represents the type of the API call response.
@@ -598,6 +647,10 @@ public class RestClient {
         String getKey(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable T body);
     }
 
+    /**
+     * Encapsulates the details of API call response.
+     * This could be used to get the raw JsonNode response or to fetch extra information like response headers.
+     */
     @RequiredArgsConstructor
     public static class Response {
         private final ResponseEntity<JsonNode> responseEntity;
@@ -617,6 +670,15 @@ public class RestClient {
             List<String> header = responseEntity.getHeaders().get(headerName);
 
             return Optional.ofNullable(header).flatMap(it -> it.stream().findFirst());
+        }
+
+        /**
+         * @return The unwrapped response body as string.
+         * In case that the main result is wrapped in the {@code data} parameter it would be unwrapped.
+         * Also, the status of {@code responseCode} parameter would be checked.
+         */
+        public String asString() {
+            return asJsonNode().toString();
         }
 
         /**
@@ -722,7 +784,11 @@ public class RestClient {
             };
             val sourceValue = isMsResponse || !body.has("responseCode") ? body : body.get("data");
 
-            val result = jackson.fromJson(requireNonNull(sourceValue), typeRef);
+            //noinspection unchecked
+            T result = responseType == String.class || responseType == CharSequence.class
+                       ? (T) sourceValue.toString()
+                       : jackson.fromJson(requireNonNull(sourceValue), typeRef);
+
             if (result instanceof MSResponse) {
                 val msResponse = (MSResponse<?>) result;
                 if (msResponse.responseCode != 200) {
