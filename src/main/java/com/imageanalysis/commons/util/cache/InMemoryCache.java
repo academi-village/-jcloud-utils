@@ -5,6 +5,7 @@ import lombok.val;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -34,14 +35,13 @@ public class InMemoryCache<T> implements Cache<T> {
      * @see Cache#get(String, Supplier)
      */
     @Override
-    public @Nullable T get(String key, Supplier<T> newValueSupplier) {
+    public T get(String key, Supplier<T> newValueSupplier) {
         val cachedValue = get(key);
         if (cachedValue != null && isValid(cachedValue))
             return cachedValue;
 
-        val newValue = newValueSupplier.get();
-        if (newValue != null)
-            cacheMap.compute(key, (k, oldValue) -> oldValue == null ? newValue : oldValue);
+        val newValue = Objects.requireNonNull(newValueSupplier.get());
+        cacheMap.compute(key, (k, oldValue) -> oldValue == null ? newValue : oldValue);
 
         return newValue;
     }

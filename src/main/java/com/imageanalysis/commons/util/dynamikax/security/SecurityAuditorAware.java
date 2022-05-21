@@ -1,11 +1,11 @@
 package com.imageanalysis.commons.util.dynamikax.security;
 
 import com.imageanalysis.commons.spring.Profile;
+import com.imageanalysis.commons.util.jooq.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.AuditorAware;
-import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
@@ -19,7 +19,7 @@ public class SecurityAuditorAware implements AuditorAware<String> {
     @Override
     public Optional<String> getCurrentAuditor() {
         String username = authService.getOptionalUser().map(UserDetails::getUsername).orElse(getUsernameFromContext());
-        username = StringUtils.hasText(username) ? username : activeProfile.getDefaultUsername();
+        username = StringUtils.defaultIfBlank(username, activeProfile.getDefaultUsername());
 
         return Optional.of(username);
     }

@@ -1,12 +1,12 @@
 package com.imageanalysis.commons.util.dynamikax;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.imageanalysis.commons.errors.AppException;
 import com.imageanalysis.commons.errors.ProjectError;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @deprecated Must be removed
@@ -17,9 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 public class MSResponse<T> {
     public Integer responseCode;
-    public String  responseMessage;
-    public T       data;
 
+    @Nullable
+    public String responseMessage;
+
+    @Nullable
+    public T data;
+
+    @Nullable
     public String errorCode;
 
     /**
@@ -40,8 +45,5 @@ public class MSResponse<T> {
                 .setResponseCode(200)
                 .setResponseMessage("OK")
                 .setData(responseBody);
-    }
-
-    public static class TypeRef<T> extends TypeReference<MSResponse<T>> {
     }
 }

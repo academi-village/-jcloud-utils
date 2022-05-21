@@ -28,7 +28,7 @@ import static com.imageanalysis.commons.errors.ProjectError.ENDPOINT_ID_NOT_FOUN
 
 @Slf4j
 @Component
-@ConditionalOnMissingBean
+@ConditionalOnMissingBean(MsImagingProjectClient.class)
 public class DefaultMsImagingProjectClient implements MsImagingProjectClient {
 
     private static final String   PATIENTS_BY_IDS_URL         = "/api/patient/get-patients-by-ids";
@@ -92,7 +92,7 @@ public class DefaultMsImagingProjectClient implements MsImagingProjectClient {
     @Nullable
     private Long fetchEndpointId(String endpointName) {
         log.debug("Fetching endpointId of endpointName: {}", endpointName);
-        val jsonNode = restClient.withCache(LONG_EXPIRATION).get(ENDPOINT_ALL_URL).execute().bodyAsJsonNode();
+        val jsonNode = restClient.withCache(LONG_EXPIRATION).get(ENDPOINT_ALL_URL).execute().unwrappedBody();
 
         return extractEndpointId(jsonNode, endpointName);
     }

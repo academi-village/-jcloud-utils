@@ -29,7 +29,6 @@ public interface Cache<T> {
      * @param newValueSupplier The supplier of the new value to be inserted in cache in case of the cache-miss.
      * @return The cached value which is fetched from cache.
      */
-    @Nullable
     T get(String key, Supplier<T> newValueSupplier);
 
     /**

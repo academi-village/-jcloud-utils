@@ -16,6 +16,7 @@ import com.imageanalysis.commons.util.dynamikax.msuser.DefaultMsUserClient;
 import com.imageanalysis.commons.util.dynamikax.msuser.MsUserClient;
 import com.imageanalysis.commons.util.java.Maps;
 import com.imageanalysis.commons.util.jooq.StopWatch;
+import com.imageanalysis.commons.util.jooq.StringUtils;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -82,10 +82,11 @@ public class RestClient {
     private final Jackson      jackson;
     private final MsUserClient msUserClient;
 
-    private final Cache<ExpirableValue<Object>> cache = new InMemoryCache<>();
-    private       Duration                      expiration;
-    private       Supplier<String>              tokenGenerator;
-    private       Microservice                  microservice;
+    private final Cache<ExpirableValue<Object>>    cache                 = new InMemoryCache<>();
+    private       Duration                         expiration;
+    private       Supplier<String>                 authorizationProvider = () -> "Bearer " + msUserClient.getJwtToken();
+    private       AuthorizationKeyProvider<Object> cacheKeyProvider      = this::defaultCacheKey;
+    private       Microservice                     microservice;
 
     @Autowired
     public RestClient(Profile activeProfile, RestTemplate restTemplate, Jackson jackson, MsUserClient msUserClient) {
@@ -281,18 +282,10 @@ public class RestClient {
     }
 
     /**
-     * Creates a new clone of the current client with the customized token generator.
-     */
-    public RestClient with(@NonNull TokenType tokenType, @NonNull Function<RestClient, String> tokenGenerator) {
-        RestClient clientWithoutAuth = this.noAuth();
-        return this.withTokenGenerator(() -> tokenType.name + tokenGenerator.apply(clientWithoutAuth));
-    }
-
-    /**
      * Creates a new clone of the current client without authorization.
      */
     public RestClient noAuth() {
-        return this.withTokenGenerator(NO_OP_TOKEN_GENERATOR);
+        return this.withAuthorizationProvider(NO_OP_TOKEN_GENERATOR);
     }
 
     /**
@@ -313,19 +306,20 @@ public class RestClient {
                                              @Nullable Object body) {
         String key = getRequestSignature(httpMethod, url, headers, body);
         //noinspection ConstantConditions
-        if (isCacheEnabled())
-            //noinspection ConstantConditions,unchecked
-            return (ResponseEntity<JsonNode>) cache.get(key, () ->
-                    toExpirable(doRequest(httpMethod, url, headers, body))).value;
+        if (!isCacheEnabled())
+            return doRequest(httpMethod, url, headers, body);
 
-        return doRequest(httpMethod, url, headers, body);
+        Supplier<ExpirableValue<Object>> supplier = () -> toExpirable(doRequest(httpMethod, url, headers, body));
+
+        //noinspection unchecked
+        return (ResponseEntity<JsonNode>) cache.get(key, supplier).value;
     }
 
     private ResponseEntity<JsonNode> doRequest(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
         val    stopWatch        = new StopWatch();
         String requestSignature = getRequestSignature(httpMethod, url, headers, body);
         try {
-            val entity   = getHttpEntity(url, headers, body);
+            val entity   = getHttpEntity(httpMethod, url, headers, body);
             val response = restTemplate.exchange(url, httpMethod, entity, JsonNode.class);
 
             val infoLog = String.format("Remote request executed: %s \nResponse: %s", requestSignature, response);
@@ -350,66 +344,77 @@ public class RestClient {
         }
     }
 
-    private AppError toAppError(String requestSignature, ResponseEntity<JsonNode> response) {
-        Object details = Maps.of("request", requestSignature, "response", response);
-        val    body    = response.getBody();
-        if (body == null || !body.isObject())
-            return ProjectError.REMOTE_SERVICE_FAILED.details(details);
+    /**
+     * Creates a new clone of the current client with the customized authorization value provider.
+     * The provided values would be cached to improve performance.
+     *
+     * @param authorizationProvider A function that provides the value for {@code Authorization} header of request.
+     *                              A {@link RestClient} wit disabled authorization is passed that could be used
+     *                              to fetch the access token from the third-party API.
+     *                              Examples of provided values: "{@code Basic YWRtaW46YWRtaW5wYXNz}"
+     *                              and <br/> "{@code Bearer eyJhbG.eyJleHAiOjE2.OlFmLQHXPsuN}"
+     */
+    public RestClient withAuth(@NonNull Function<RestClient, String> authorizationProvider) {
+        return this.withAuth(authorizationProvider, this::defaultCacheKey);
+    }
 
-        if (body.has("httpStatusCode"))
-            return jackson.convertValue(body, GatewayError.class);
-
-        if (body.has("responseCode")) {
-            String errorCode = body.get("errorCode").asText("NO_ERROR_CODE");
-            String message   = body.get("responseMessage").asText("NO_RESPONSE_MESSAGE");
-            details = body.has("data") && !body.get("data").isNull() ? body.get("data") : details;
-            return new GatewayError(errorCode, message)
-                    .setHttpStatusCode(response.getStatusCodeValue())
-                    .details(details);
-        }
-
-        if (body.has("errors")) {
-            val error     = body.get("errors").iterator().next();
-            val errorCode = error.get("error").asText("NOT_ERROR_CODE");
-            val message   = error.get("message").asText("NO_MESSAGE");
-
-            return new GatewayError(errorCode, message)
-                    .setHttpStatusCode(response.getStatusCodeValue())
-                    .details(details);
-        }
-
-        return ProjectError.REMOTE_SERVICE_FAILED.details(details);
+    /**
+     * Creates a new clone of the current client with the customized authorization value provider.
+     * The provided values would be cached to improve performance.
+     *
+     * @param authorizationProvider A function that provides the value for {@code Authorization} header of request.
+     *                              A {@link RestClient} wit disabled authorization is passed that could be used
+     *                              to fetch the access token from the third-party API.
+     *                              Examples of provided values: "{@code Basic YWRtaW46YWRtaW5wYXNz}"
+     *                              and <br/> "{@code Bearer eyJhbG.eyJleHAiOjE2.OlFmLQHXPsuN}"
+     * @param cacheKeyProvider      provides a key that would be used as a key to cache the generated authorization value.
+     */
+    public <T> RestClient withAuth(@NonNull Function<RestClient, String> authorizationProvider,
+                                   @NonNull RestClient.AuthorizationKeyProvider<T> cacheKeyProvider) {
+        return this
+                .withAuthorizationProvider(() -> authorizationProvider.apply(this.noAuth()))
+                .withCacheKeyProvider((AuthorizationKeyProvider<Object>) cacheKeyProvider);
     }
 
     @NotNull
-    private HttpEntity<Object> getHttpEntity(String url, HttpHeaders headers, @Nullable Object body) {
+    private HttpEntity<Object> getHttpEntity(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
+        if (authorizationProvider == NO_OP_TOKEN_GENERATOR)
+            return new HttpEntity<>(body, headers);
 
-        if (tokenGenerator != NO_OP_TOKEN_GENERATOR)
-            //noinspection ConstantConditions
-            headers.addIfAbsent("Authorization",
-                    tokenGenerator != null ? getToken(url) : "Bearer " + msUserClient.getJwtToken());
+        String authValue = getToken(httpMethod, url, headers, body);
+        headers.addIfAbsent("Authorization", authValue);
 
         return new HttpEntity<>(body, headers);
     }
 
-    private String getToken(String url) {
+    private String getToken(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
+        val cacheKey = cacheKeyProvider.getKey(httpMethod, url, headers, body);
+        if (StringUtils.isBlank(cacheKey))
+            return (String) getExpirableToken().value;
+
+        return (String) cache.get(cacheKey, this::getExpirableToken).value;
+    }
+
+    private String defaultCacheKey(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
         String domain = url.replace("http://", "").replace("https://", "");
         val    index  = domain.indexOf('/');
         domain = domain.substring(0, index);
 
-        //noinspection ConstantConditions
-        return (String) cache.get("JWT_TOKEN_" + domain, this::getExpirableToken).value;
+        return "AUTHORIZATION_" + domain;
     }
 
     @NotNull
     private ExpirableValue<Object> getExpirableToken() {
-        String token = tokenGenerator.get();
+        String token = authorizationProvider.get();
         if (token.startsWith("Bearer ")) {
             val bearerToken = new BearerToken(token);
             return new ExpirableValue<>(bearerToken.jwtToken, bearerToken.expiresAt);
         }
 
-        return new ExpirableValue<>(token, Duration.ofDays(30));
+        if (token.startsWith("Basic "))
+            return new ExpirableValue<>(token, Duration.ofDays(30));
+
+        return new ExpirableValue<>(token, Duration.ZERO);
     }
 
     @NotNull
@@ -445,14 +450,6 @@ public class RestClient {
 
     private <T> ExpirableValue<T> toExpirable(T result) {
         return new ExpirableValue<>(result, expiration);
-    }
-
-    @RequiredArgsConstructor
-    public enum TokenType {
-        BASIC("Basic "),
-        BEARER("Bearer ");
-
-        public final String name;
     }
 
     @RequiredArgsConstructor
@@ -560,6 +557,47 @@ public class RestClient {
         }
     }
 
+    private AppError toAppError(String requestSignature, ResponseEntity<JsonNode> response) {
+        Object details = Maps.of("request", requestSignature, "response", response);
+        val    body    = response.getBody();
+        if (body == null || !body.isObject())
+            return ProjectError.REMOTE_SERVICE_FAILED.details(details);
+
+        if (body.has("httpStatusCode"))
+            return jackson.convertValue(body, GatewayError.class);
+
+        int httpStatusCode = response.getStatusCodeValue();
+        if (body.has("responseCode")) {
+            String errorCode = body.get("errorCode").asText("NO_ERROR_CODE");
+            String message   = body.get("responseMessage").asText("NO_RESPONSE_MESSAGE");
+            details = body.has("data") && !body.get("data").isNull() ? body.get("data") : details;
+            return new GatewayError(errorCode, message, httpStatusCode).details(details);
+        }
+
+        if (body.has("errors")) {
+            val error     = body.get("errors").iterator().next();
+            val errorCode = error.get("error").asText("NO_ERROR_CODE");
+            val message   = error.get("message").asText("NO_MESSAGE");
+
+            return new GatewayError(errorCode, message, httpStatusCode).details(details);
+        }
+
+        return ProjectError.REMOTE_SERVICE_FAILED.details(details);
+    }
+
+    @FunctionalInterface
+    public interface AuthorizationKeyProvider<T> {
+
+        /**
+         * provides a key that would be used as a key to cache the generated authorization value.
+         * If returns null or blank string, it means do not cache at all.
+         *
+         * @param headers A readonly clone of the request headers.
+         */
+        @Nullable
+        String getKey(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable T body);
+    }
+
     @RequiredArgsConstructor
     public static class Response {
         private final ResponseEntity<JsonNode> responseEntity;
@@ -568,30 +606,48 @@ public class RestClient {
         /**
          * @return The response headers.
          */
-        public HttpHeaders headers() {
+        public HttpHeaders getHeaders() {
             return responseEntity.getHeaders();
         }
 
         /**
-         * @return The response header of the given header name.
+         * @return The value of the response header name .
          */
-        public Optional<String> header(String headerName) {
+        public Optional<String> getHeader(String headerName) {
             List<String> header = responseEntity.getHeaders().get(headerName);
 
             return Optional.ofNullable(header).flatMap(it -> it.stream().findFirst());
         }
 
         /**
-         * @return The response body as a map.
+         * @return The unwrapped response body as a {@link JsonNode}.
+         * In case that the main result is wrapped in the {@code data} parameter it would be unwrapped.
+         * Also, the status of {@code responseCode} parameter would be checked.
          */
-        public JsonNode bodyAsJsonNode() {
-            return requireNonNull(responseEntity.getBody());
+        public JsonNode asJsonNode() {
+            val     body      = requireNonNull(responseEntity.getBody());
+            boolean isWrapped = body.has("responseCode");
+
+            if (!isWrapped)
+                return body;
+
+            val responseCode = body.get("responseCode").asInt();
+            if (responseCode != 200) {
+                val errorCode    = body.get("errorCode").asText("NO_ERROR_CODE");
+                val message      = body.get("responseMessage").asText("NO_RESPONSE_MESSAGE");
+                val details      = Maps.of("data", body.get("data"), "responseCode", responseCode);
+                val gatewayError = new GatewayError(errorCode, message, HTTP_BAD_GATEWAY).details(details);
+
+                throw new AppException(gatewayError);
+            }
+
+            return body.get("data");
         }
 
         /**
          * @return The response HTTP status.
          */
-        public HttpStatus statusCode() {
+        public HttpStatus getStatusCode() {
             return responseEntity.getStatusCode();
         }
 
@@ -674,9 +730,7 @@ public class RestClient {
                     val message   = Optional.ofNullable(msResponse.responseMessage).orElse("NO_RESPONSE_MESSAGE");
                     val details = Maps.of("data", msResponse.getData(),
                             "responseCode", msResponse.responseCode);
-                    val gatewayError = new GatewayError(errorCode, message)
-                            .setHttpStatusCode(HTTP_BAD_GATEWAY)
-                            .details(details);
+                    val gatewayError = new GatewayError(errorCode, message, HTTP_BAD_GATEWAY).details(details);
 
                     throw new AppException(gatewayError);
                 }

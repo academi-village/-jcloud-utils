@@ -53,4 +53,8 @@ public class MsUserToken implements Cache.Expirable {
         this.userId    = Long.parseLong(claims.getId());
         this.expiresAt = claims.getExpiration().toInstant().minusSeconds(120);
     }
+
+    public boolean isExpired() {
+        return Instant.now().isAfter(expiresAt);
+    }
 }
