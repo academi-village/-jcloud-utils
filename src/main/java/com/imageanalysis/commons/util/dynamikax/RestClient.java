@@ -113,10 +113,10 @@ public class RestClient {
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
      *                          Example:
-     * 	 <pre class="code">
-     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
-     * 	 restClient.get(path, &quot;hot&amp;cold&quot;);
-     * 	 </pre>
+     *                          <pre class="code">
+     *                          	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     *                          	 restClient.get(path, &quot;hot&amp;cold&quot;);
+     *                          	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request get(@NonNull String path, Object... uriVariableValues) {
@@ -144,10 +144,10 @@ public class RestClient {
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
      *                          Example:
-     * 	 <pre class="code">
-     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
-     * 	 restClient.post(path, &quot;hot&amp;cold&quot;);
-     * 	 </pre>
+     *                          <pre class="code">
+     *                          	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     *                          	 restClient.post(path, &quot;hot&amp;cold&quot;);
+     *                          	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request post(@NonNull String path, Object... uriVariableValues) {
@@ -175,10 +175,10 @@ public class RestClient {
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
      *                          Example:
-     * 	 <pre class="code">
-     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
-     * 	 restClient.put(path, &quot;hot&amp;cold&quot;);
-     * 	 </pre>
+     *                          <pre class="code">
+     *                          	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     *                          	 restClient.put(path, &quot;hot&amp;cold&quot;);
+     *                          	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request put(@NonNull String path, Object... uriVariableValues) {
@@ -206,10 +206,10 @@ public class RestClient {
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
      *                          Example:
-     * 	 <pre class="code">
-     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
-     * 	 restClient.request(HttpMethod.GET, path, &quot;hot&amp;cold&quot;);
-     * 	 </pre>
+     *                          <pre class="code">
+     *                          	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     *                          	 restClient.request(HttpMethod.GET, path, &quot;hot&amp;cold&quot;);
+     *                          	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request delete(@NonNull String path, Object... uriVariableValues) {
@@ -238,10 +238,10 @@ public class RestClient {
      *                          But it also could be a full URL to call third-party APIs. For example: {@code https://connect.radiobotics.io/api/v1/analysis/study}
      * @param uriVariableValues The map of URI variables. Used to replace URI template variables with the values from an array.
      *                          Example:
-     * 	 <pre class="code">
-     * 	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
-     * 	 restClient.request(HttpMethod.GET, path, &quot;hot&amp;cold&quot;);
-     * 	 </pre>
+     *                          <pre class="code">
+     *                          	 String path = &quot;/hotels/42?filter={value}&quot;;<br/>
+     *                          	 restClient.request(HttpMethod.GET, path, &quot;hot&amp;cold&quot;);
+     *                          	 </pre>
      * @return The request to set the headers and body and then to execute the API call.
      */
     public Request request(@NonNull HttpMethod httpMethod, @NonNull String path, Object... uriVariableValues) {

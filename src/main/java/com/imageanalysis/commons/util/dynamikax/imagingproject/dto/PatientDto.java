@@ -15,7 +15,7 @@ import java.util.Set;
 public class PatientDto {
 
     @EqualsAndHashCode.Include
-    public Long                    id;
+    public Long                id;
     public String              patientCode;
     public Set<VisitConfigDto> visitConfigs = new HashSet<>(); /* Cyclic Reference */
 }

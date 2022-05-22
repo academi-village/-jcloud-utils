@@ -48,22 +48,22 @@ class ImmutableCollections {
         public boolean add(E e) {throw uoe();}
 
         @Override
-        public boolean addAll(Collection<? extends E> c)     {throw uoe();}
+        public boolean addAll(Collection<? extends E> c) {throw uoe();}
 
         @Override
-        public void clear()                                  {throw uoe();}
+        public void clear() {throw uoe();}
 
         @Override
-        public boolean remove(Object o)                      {throw uoe();}
+        public boolean remove(Object o) {throw uoe();}
 
         @Override
-        public boolean removeAll(Collection<?> c)            {throw uoe();}
+        public boolean removeAll(Collection<?> c) {throw uoe();}
 
         @Override
         public boolean removeIf(Predicate<? super E> filter) {throw uoe();}
 
         @Override
-        public boolean retainAll(Collection<?> c)            {throw uoe();}
+        public boolean retainAll(Collection<?> c) {throw uoe();}
     }
 
     // ---------- List Implementations ----------
@@ -94,16 +94,16 @@ class ImmutableCollections {
         public boolean addAll(int index, Collection<? extends E> c) {throw uoe();}
 
         @Override
-        public E remove(int index)                                  {throw uoe();}
+        public E remove(int index) {throw uoe();}
 
         @Override
-        public void replaceAll(UnaryOperator<E> operator)           {throw uoe();}
+        public void replaceAll(UnaryOperator<E> operator) {throw uoe();}
 
         @Override
-        public E set(int index, E element)                          {throw uoe();}
+        public E set(int index, E element) {throw uoe();}
 
         @Override
-        public void sort(Comparator<? super E> c)                   {throw uoe();}
+        public void sort(Comparator<? super E> c) {throw uoe();}
 
         @Override
         public List<E> subList(int fromIndex, int toIndex) {
@@ -690,43 +690,43 @@ class ImmutableCollections {
 
     abstract static class AbstractImmutableMap<K, V> extends AbstractMap<K, V> implements Serializable {
         @Override
-        public void clear()                                                                {throw uoe();}
+        public void clear() {throw uoe();}
 
         @Override
-        public V compute(K key, BiFunction<? super K, ? super V, ? extends V> rf)          {throw uoe();}
+        public V compute(K key, BiFunction<? super K, ? super V, ? extends V> rf) {throw uoe();}
 
         @Override
-        public V computeIfAbsent(K key, Function<? super K, ? extends V> mf)               {throw uoe();}
+        public V computeIfAbsent(K key, Function<? super K, ? extends V> mf) {throw uoe();}
 
         @Override
         public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> rf) {throw uoe();}
 
         @Override
-        public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> rf)   {throw uoe();}
+        public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> rf) {throw uoe();}
 
         @Override
-        public V put(K key, V value)                                                       {throw uoe();}
+        public V put(K key, V value) {throw uoe();}
 
         @Override
-        public void putAll(Map<? extends K, ? extends V> m)                                {throw uoe();}
+        public void putAll(Map<? extends K, ? extends V> m) {throw uoe();}
 
         @Override
-        public V putIfAbsent(K key, V value)                                               {throw uoe();}
+        public V putIfAbsent(K key, V value) {throw uoe();}
 
         @Override
-        public V remove(Object key)                                                        {throw uoe();}
+        public V remove(Object key) {throw uoe();}
 
         @Override
-        public boolean remove(Object key, Object value)                                    {throw uoe();}
+        public boolean remove(Object key, Object value) {throw uoe();}
 
         @Override
-        public V replace(K key, V value)                                                   {throw uoe();}
+        public V replace(K key, V value) {throw uoe();}
 
         @Override
-        public boolean replace(K key, V oldValue, V newValue)                              {throw uoe();}
+        public boolean replace(K key, V oldValue, V newValue) {throw uoe();}
 
         @Override
-        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> f)            {throw uoe();}
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> f) {throw uoe();}
     }
 
     static final class Map1<K, V> extends AbstractImmutableMap<K, V> {

@@ -31,7 +31,7 @@ import static com.imageanalysis.commons.errors.ProjectError.ENDPOINT_ID_NOT_FOUN
 @Component
 @ConditionalOnMissingBean(MsImagingProjectClient.class)
 public class DefaultMsImagingProjectClient implements MsImagingProjectClient {
-    private static final Duration LONG_EXPIRATION             = Duration.ofDays(7);
+    private static final Duration LONG_EXPIRATION = Duration.ofDays(7);
 
     private final RestClient  restClient;
     private final Environment env;

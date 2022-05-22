@@ -12,12 +12,12 @@ import java.util.Set;
 @Getter(onMethod_ = @Deprecated)
 public class VisitConfigDto implements Comparable<VisitConfigDto> {
 
-    public Long         id;
-    public PatientDto   patient;
-    public VisitPayload visit;
-    public String             visitName;
-    public String             visitBlindName;
-    public VisitType          visitType;
+    public Long           id;
+    public PatientDto     patient;
+    public VisitPayload   visit;
+    public String         visitName;
+    public String         visitBlindName;
+    public VisitType      visitType;
     public Boolean        noUploads;
     public Set<SeriesDto> series;
 

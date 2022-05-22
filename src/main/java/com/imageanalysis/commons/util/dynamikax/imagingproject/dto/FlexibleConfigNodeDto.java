@@ -19,9 +19,9 @@ public class FlexibleConfigNodeDto {
     public EndpointDto                     endpoint;
     public List<FlexibleConfigModalityDto> modalities = new ArrayList<>();
     public String                          readingLevel;
-    public String                              readingType;
-    public String                              readingVersion;
-    public Boolean                             moderationEnabled;
-    public Boolean                             useDynamikaAI;
-    public String                              hideVisitHistory;
+    public String                          readingType;
+    public String                          readingVersion;
+    public Boolean                         moderationEnabled;
+    public Boolean                         useDynamikaAI;
+    public String                          hideVisitHistory;
 }
