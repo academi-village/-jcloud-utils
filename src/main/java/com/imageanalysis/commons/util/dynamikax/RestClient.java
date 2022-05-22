@@ -40,6 +40,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.imageanalysis.commons.errors.ProjectError.REMOTE_SERVICE_FAILED;
@@ -80,18 +81,21 @@ import static org.springframework.http.HttpMethod.*;
 @AllArgsConstructor
 @ConditionalOnBean(DefaultMsUserClient.class)
 public class RestClient {
-    private final Supplier<String> NO_OP_TOKEN_GENERATOR = () -> null;
+    private static final Pattern          PASSWORD_PATTER              = Pattern.compile("\"password\"\\s*:\\s*\".*?\"");
+    private static final Supplier<String> NO_OP_AUTHORIZATION_PROVIDER = () -> null;
 
     private final Profile      activeProfile;
     private final RestTemplate restTemplate;
     private final Jackson      jackson;
     private final MsUserClient msUserClient;
 
-    private final Cache<ExpirableValue<Object>>    cache                 = new InMemoryCache<>();
-    private       Duration                         expiration;
-    private       Supplier<String>                 authorizationProvider = this::getAuthorizationValue;
-    private       AuthorizationKeyProvider<Object> cacheKeyProvider      = this::defaultCacheKey;
-    private       Microservice                     microservice;
+    private final Cache<ExpirableValue<Object>> cache;
+
+    private AuthorizationType                authorizationType;
+    private Supplier<String>                 authorizationProvider;
+    private AuthorizationKeyProvider<Object> cacheKeyProvider;
+    private Duration                         expiration;
+    private Microservice                     microservice;
 
     @Autowired
     public RestClient(Profile activeProfile, RestTemplate restTemplate, Jackson jackson, MsUserClient msUserClient) {
@@ -99,10 +103,14 @@ public class RestClient {
         this.restTemplate  = restTemplate;
         this.jackson       = jackson;
         this.msUserClient  = msUserClient;
+        this.cache         = new InMemoryCache<>();
 
-        if (msUserClient instanceof DefaultMsUserClient) {
-            ((DefaultMsUserClient) this.msUserClient).setRestClient(this);
-        }
+        if (msUserClient instanceof DefaultMsUserClient)
+            ((DefaultMsUserClient) this.msUserClient).setRestClient(this.withExpiration(null));
+
+        authorizationProvider = this::getAuthorizationValue;
+        cacheKeyProvider      = this::defaultCacheKey;
+        authorizationType     = AuthorizationType.MS_USER;
     }
 
     /**
@@ -290,7 +298,7 @@ public class RestClient {
      * Creates a new clone of the current client without authorization.
      */
     public RestClient noAuth() {
-        return this.withAuthorizationProvider(NO_OP_TOKEN_GENERATOR);
+        return this.withAuthorizationProvider(NO_OP_AUTHORIZATION_PROVIDER).withAuthorizationType(AuthorizationType.NO_OP);
     }
 
     /**
@@ -308,8 +316,8 @@ public class RestClient {
     private ResponseEntity<JsonNode> request(HttpMethod httpMethod,
                                              String url,
                                              HttpHeaders headers,
-                                             @Nullable Object body) {
-        String key = getRequestSignature(httpMethod, url, headers, body);
+                                             @Nullable Object body,
+                                             String cacheKey) {
         //noinspection ConstantConditions
         if (!isCacheEnabled())
             return doRequest(httpMethod, url, headers, body);
@@ -317,12 +325,13 @@ public class RestClient {
         Supplier<ExpirableValue<Object>> supplier = () -> toExpirable(doRequest(httpMethod, url, headers, body));
 
         //noinspection unchecked
-        return (ResponseEntity<JsonNode>) cache.get(key, supplier).value;
+        return (ResponseEntity<JsonNode>) cache.get(cacheKey, supplier).value;
     }
 
     private ResponseEntity<JsonNode> doRequest(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
         val    stopWatch        = new StopWatch();
         String requestSignature = getRequestSignature(httpMethod, url, headers, body);
+        requestSignature = PASSWORD_PATTER.matcher(requestSignature).replaceFirst("\"password\":\"*****\"");
         try {
             val entity   = getHttpEntity(httpMethod, url, headers, body);
             val response = restTemplate.exchange(url, httpMethod, entity, JsonNode.class);
@@ -378,12 +387,13 @@ public class RestClient {
                                    @NonNull RestClient.AuthorizationKeyProvider<T> cacheKeyProvider) {
         return this
                 .withAuthorizationProvider(() -> authorizationProvider.apply(this.noAuth()))
-                .withCacheKeyProvider((AuthorizationKeyProvider<Object>) cacheKeyProvider);
+                .withCacheKeyProvider((AuthorizationKeyProvider<Object>) cacheKeyProvider)
+                .withAuthorizationType(AuthorizationType.CUSTOM);
     }
 
     @NotNull
     private HttpEntity<Object> getHttpEntity(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
-        if (authorizationProvider == NO_OP_TOKEN_GENERATOR)
+        if (authorizationType == AuthorizationType.NO_OP)
             return new HttpEntity<>(body, headers);
 
         String authValue = getToken(httpMethod, url, headers, body);
@@ -393,6 +403,9 @@ public class RestClient {
     }
 
     private String getToken(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
+        if (authorizationType == AuthorizationType.MS_USER)
+            return (String) getExpirableToken().value;
+
         val cacheKey = cacheKeyProvider.getKey(httpMethod, url, headers, body);
         if (StringUtils.isBlank(cacheKey))
             return (String) getExpirableToken().value;
@@ -455,158 +468,6 @@ public class RestClient {
 
     private <T> ExpirableValue<T> toExpirable(T result) {
         return new ExpirableValue<>(result, expiration);
-    }
-
-    @RequiredArgsConstructor
-    public static class Request {
-        private final RestClient  client;
-        private final HttpMethod  method;
-        private final String      url;
-        private final HttpHeaders httpHeaders = new HttpHeaders();
-
-        @Nullable
-        private Object body;
-
-        /**
-         * Sets the body of the request.
-         */
-        public Request body(@Nullable Object body) {
-            this.body = body;
-            return this;
-        }
-
-        /**
-         * Sets a header of the request.
-         */
-        public Request header(String headerName, String value) {
-            httpHeaders.set(headerName, value);
-            return this;
-        }
-
-        /**
-         * Adds the provided {@code headers} to the current request headers.
-         */
-        public Request headers(MultiValueMap<String, String> headers) {
-            httpHeaders.addAll(headers);
-            return this;
-        }
-
-        /**
-         * Executes the remote API call and returns the raw response.
-         * The {@link Response} could be used to fetch extra information like response headers.
-         */
-        public Response execute() {
-            String key = client.getRequestSignature(method, url, httpHeaders, body);
-            return new Response(client.request(method, url, httpHeaders, body), key, client);
-        }
-
-        /**
-         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
-         *
-         * @return The completable future of API call response.
-         */
-        public CompletableFuture<Response> executeAsync() {
-            return CompletableFuture.supplyAsync(this::execute);
-        }
-
-        /**
-         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
-         *
-         * @return The completable future of API call response.
-         */
-        public <T> CompletableFuture<T> executeAsync(Function<JsonNode, T> responseMapper) {
-            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> responseMapper.apply(it.asJsonNode()));
-        }
-
-        /**
-         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
-         *
-         * @return The completable future of API call response.
-         */
-        public <T> CompletableFuture<T> executeAsync(Class<T> responseType) {
-            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> it.into(responseType));
-        }
-
-        /**
-         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
-         *
-         * @return The completable future of API call response.
-         */
-        public <T> CompletableFuture<T> executeAsync(TypeReference<T> responseType) {
-            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> it.into(responseType));
-        }
-
-        /**
-         * Executes the remote API call asynchronously in the given executor.
-         *
-         * @param executor the executor to use for asynchronous execution
-         * @return The completable future of API call response.
-         */
-        public CompletableFuture<Response> executeAsync(Executor executor) {
-            return CompletableFuture.supplyAsync(this::execute, executor);
-        }
-
-        /**
-         * Executes the remote API call and returns the result.
-         *
-         * @param <T>          Represents the type of the API call response.
-         * @param responseType Represents the response type to return;
-         * @throws AppException with {@link ProjectError#REMOTE_SERVICE_FAILED} or the {@link GatewayError} if any error occurs.
-         */
-        public <T> T execute(Class<T> responseType) {
-            return execute().into(responseType);
-        }
-
-        /**
-         * Executes the remote API call and returns the result.
-         *
-         * @param <T>          Represents the type of the API call response.
-         * @param responseType Represents the response type to return;
-         * @throws AppException with {@link ProjectError#REMOTE_SERVICE_FAILED} or the {@link GatewayError} if any error occurs.
-         */
-        public <T> T execute(TypeReference<T> responseType) {
-            return execute().into(responseType);
-        }
-
-        /**
-         * Executes the remote API call and returns the result. If any error occurs, the default value will return.
-         *
-         * @param <T>          Represents the type of the API call response.
-         * @param responseType Represents the response type to return;
-         */
-        public <T> T execute(Class<T> responseType, T defaultValue) {
-            return executeOptional(responseType).orElse(defaultValue);
-        }
-
-        /**
-         * Executes the remote API call and returns the result. If any error occurs, the default value will return.
-         *
-         * @param <T>          Represents the type of the API call response.
-         * @param responseType Represents the response type to return;
-         */
-        public <T> T execute(TypeReference<T> responseType, T defaultValue) {
-            return executeOptional(responseType).orElse(defaultValue);
-        }
-
-        /**
-         * Executes the remote API call and returns an optional result.
-         *
-         * @param <T>          Represents the type of the API call response.
-         * @param responseType Represents the response type to return;
-         */
-        public <T> Optional<T> executeOptional(TypeReference<T> responseType) {
-            return execute().intoOptional(responseType);
-        }
-
-        /**
-         * Executes the remote API call and returns an optional result.
-         *
-         * @param <T>          Represents the type of the API call response.
-         * @param responseType Represents the response type to return;
-         */
-        public <T> Optional<T> executeOptional(Class<T> responseType) {
-            return execute().intoOptional(responseType);
-        }
     }
 
     private AppError toAppError(String requestSignature, ResponseEntity<JsonNode> response) {
@@ -797,7 +658,7 @@ public class RestClient {
             if (result instanceof MSResponse) {
                 val msResponse = (MSResponse<?>) result;
                 if (msResponse.responseCode != 200) {
-                    val errorCode = Optional.ofNullable(msResponse.errorCode).orElse("NO_ERROR_CODE");
+                    val errorCode = Optional.ofNullable(msResponse.code).orElse("NO_ERROR_CODE");
                     val message   = Optional.ofNullable(msResponse.responseMessage).orElse("NO_RESPONSE_MESSAGE");
                     val details = Maps.of("data", msResponse.getData(),
                             "responseCode", msResponse.responseCode);
@@ -820,5 +681,161 @@ public class RestClient {
     @NotNull
     private String toString(RestClientException ex) {
         return activeProfile != Profile.PROD ? messageWithStackTrace(ex) : ex.toString();
+    }
+
+    private enum AuthorizationType {NO_OP, MS_USER, CUSTOM}
+
+    @RequiredArgsConstructor
+    public static class Request {
+        private final RestClient  client;
+        private final HttpMethod  method;
+        private final String      url;
+        private final HttpHeaders httpHeaders = new HttpHeaders();
+
+        @Nullable
+        private Object body;
+
+        /**
+         * Sets the body of the request.
+         */
+        public Request body(@Nullable Object body) {
+            this.body = body;
+            return this;
+        }
+
+        /**
+         * Sets a header of the request.
+         */
+        public Request header(String headerName, String value) {
+            httpHeaders.set(headerName, value);
+            return this;
+        }
+
+        /**
+         * Adds the provided {@code headers} to the current request headers.
+         */
+        public Request headers(MultiValueMap<String, String> headers) {
+            httpHeaders.addAll(headers);
+            return this;
+        }
+
+        /**
+         * Executes the remote API call and returns the raw response.
+         * The {@link Response} could be used to fetch extra information like response headers.
+         */
+        public Response execute() {
+            val cacheKey       = client.getRequestSignature(method, url, httpHeaders, body);
+            val responseEntity = client.request(method, url, httpHeaders, body, cacheKey);
+
+            return new Response(responseEntity, cacheKey, client);
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public CompletableFuture<Response> executeAsync() {
+            return CompletableFuture.supplyAsync(this::execute);
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public <T> CompletableFuture<T> executeAsync(Function<JsonNode, T> responseMapper) {
+            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> responseMapper.apply(it.asJsonNode()));
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public <T> CompletableFuture<T> executeAsync(Class<T> responseType) {
+            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> it.into(responseType));
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the {@link ForkJoinPool#commonPool()}.
+         *
+         * @return The completable future of API call response.
+         */
+        public <T> CompletableFuture<T> executeAsync(TypeReference<T> responseType) {
+            return CompletableFuture.supplyAsync(this::execute).thenApply(it -> it.into(responseType));
+        }
+
+        /**
+         * Executes the remote API call asynchronously in the given executor.
+         *
+         * @param executor the executor to use for asynchronous execution
+         * @return The completable future of API call response.
+         */
+        public CompletableFuture<Response> executeAsync(Executor executor) {
+            return CompletableFuture.supplyAsync(this::execute, executor);
+        }
+
+        /**
+         * Executes the remote API call and returns the result.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
+         * @throws AppException with {@link ProjectError#REMOTE_SERVICE_FAILED} or the {@link GatewayError} if any error occurs.
+         */
+        public <T> T execute(Class<T> responseType) {
+            return execute().into(responseType);
+        }
+
+        /**
+         * Executes the remote API call and returns the result.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
+         * @throws AppException with {@link ProjectError#REMOTE_SERVICE_FAILED} or the {@link GatewayError} if any error occurs.
+         */
+        public <T> T execute(TypeReference<T> responseType) {
+            return execute().into(responseType);
+        }
+
+        /**
+         * Executes the remote API call and returns the result. If any error occurs, the default value will return.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
+         */
+        public <T> T execute(Class<T> responseType, T defaultValue) {
+            return executeOptional(responseType).orElse(defaultValue);
+        }
+
+        /**
+         * Executes the remote API call and returns the result. If any error occurs, the default value will return.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
+         */
+        public <T> T execute(TypeReference<T> responseType, T defaultValue) {
+            return executeOptional(responseType).orElse(defaultValue);
+        }
+
+        /**
+         * Executes the remote API call and returns an optional result.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
+         */
+        public <T> Optional<T> executeOptional(TypeReference<T> responseType) {
+            return execute().intoOptional(responseType);
+        }
+
+        /**
+         * Executes the remote API call and returns an optional result.
+         *
+         * @param <T>          Represents the type of the API call response.
+         * @param responseType Represents the response type to return;
+         */
+        public <T> Optional<T> executeOptional(Class<T> responseType) {
+            return execute().intoOptional(responseType);
+        }
     }
 }

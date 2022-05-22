@@ -4,7 +4,6 @@ import com.imageanalysis.commons.errors.AppError;
 import com.imageanalysis.commons.errors.AppException;
 import com.imageanalysis.commons.util.dynamikax.MSResponse;
 import com.imageanalysis.commons.util.java.Lists;
-import com.imageanalysis.commons.util.java.Maps;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -25,9 +24,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import javax.validation.constraints.NotNull;
-import java.util.Map;
 import java.util.UUID;
 
+import static com.imageanalysis.commons.errors.spring.AppExceptionHandler.ErrorFormat.*;
 import static com.imageanalysis.commons.errors.spring.AppExceptionHandler.ErrorsProperties;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -53,31 +52,36 @@ public class AppExceptionHandler extends ResponseEntityExceptionHandler {
         val fingerprint = generateFingerprint();
         logError(ex, request, fingerprint, httpStatus.value());
 
-        val responseBody = errorsProps.newFormat
-                           ? toNewErrorFormat(ex.getError(), fingerprint)
-                           : new MSResponse<Object>()
-                                   .setResponseCode(httpStatus.value())
-                                   .setResponseMessage(error.getMessage())
-                                   .setErrorCode(error.getCode())
-                                   .setFingerprint(fingerprint)
-                                   .setDetails(error.getDetails());
+        val responseBody = getResponse(error, httpStatus, fingerprint);
 
         return new ResponseEntity<>(responseBody, httpStatus);
+    }
+
+    private MSResponse<Object> getResponse(AppError error, HttpStatus httpStatus, String fingerprint) {
+        val response = new MSResponse<>().setFingerprint(fingerprint);
+
+        ErrorFormat format = errorsProps.format;
+        if (format == OLD || format == NEW_COMPATIBLE)
+            response.setResponseCode(httpStatus.value())
+                    .setResponseMessage(error.getMessage())
+                    .setCode(error.getCode())
+                    .setDetails(error.getDetails());
+
+        if (format == NEW || format == NEW_COMPATIBLE) {
+            val codedMessage = new MSResponse.CodedMessage(error.getCode(), error.getMessage(), error.getDetails());
+            response.setErrors(Lists.of(codedMessage));
+        }
+
+        return response;
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<Object> handleExpiredJwtException(ExpiredJwtException ex, WebRequest request) {
         val fingerprint = generateFingerprint();
         logError(ex, request, fingerprint, UNAUTHORIZED.value());
-        String errorCode = "user.not_authenticated";
-        String message   = "JWT token is expired";
-        val responseBody = errorsProps.newFormat
-                           ? toNewErrorFormat(fingerprint, errorCode, message, null)
-                           : new MSResponse<Object>()
-                                   .setResponseCode(UNAUTHORIZED.value())
-                                   .setResponseMessage(message)
-                                   .setErrorCode(errorCode)
-                                   .setFingerprint(fingerprint);
+        String errorCode    = "user.not_authenticated";
+        String message      = "JWT token is expired";
+        val    responseBody = toNewErrorFormat(fingerprint, UNAUTHORIZED.value(), errorCode, message, null);
 
         return new ResponseEntity<>(responseBody, UNAUTHORIZED);
     }
@@ -87,30 +91,13 @@ public class AppExceptionHandler extends ResponseEntityExceptionHandler {
         val message    = ExceptionUtils.getRootCauseMessage(ex);
         val extMessage = request.getDescription(true) + " -> " + message;
 
-        val fingerprint = generateFingerprint();
-        logError(ex, request, fingerprint, INTERNAL_SERVER_ERROR.value());
+        val fingerprint    = generateFingerprint();
+        int httpStatusCode = INTERNAL_SERVER_ERROR.value();
+        logError(ex, request, fingerprint, httpStatusCode);
 
-        val responseBody = errorsProps.newFormat
-                           ? toNewErrorFormat(fingerprint, SERVER_ERROR_CODE, message, extMessage)
-                           : new MSResponse<Object>()
-                                   .setResponseCode(INTERNAL_SERVER_ERROR.value())
-                                   .setResponseMessage(message)
-                                   .setDetails(extMessage)
-                                   .setErrorCode(SERVER_ERROR_CODE)
-                                   .setFingerprint(fingerprint);
+        val responseBody = toNewErrorFormat(fingerprint, httpStatusCode, SERVER_ERROR_CODE, message, extMessage);
 
         return new ResponseEntity<>(responseBody, INTERNAL_SERVER_ERROR);
-    }
-
-    private Object toNewErrorFormat(AppError appError, String fingerprint) {
-        return Maps.of(
-                "fingerprint", fingerprint,
-                "errors", Lists.of(Maps.of(
-                        "code", appError.getCode(),
-                        "message", appError.getMessage(),
-                        "details", appError.getDetails()
-                ))
-        );
     }
 
     private void logError(Throwable ex, WebRequest request, String fingerprint, int httpStatusCode) {
@@ -138,16 +125,25 @@ public class AppExceptionHandler extends ResponseEntityExceptionHandler {
         return DigestUtils.md5DigestAsHex(UUID.randomUUID().toString().getBytes(UTF_8));
     }
 
-    private Map<String, Object> toNewErrorFormat(String fingerprint, String errorCode, String message, String details) {
-        return Maps.of(
-                "fingerprint", fingerprint,
-                "errors", Lists.of(Maps.of(
-                        "code", errorCode,
-                        "message", message,
-                        "details", details
-                ))
-        );
+    private MSResponse<Object> toNewErrorFormat(String fingerprint, int httpStatusCode, String errorCode, String message, String details) {
+        val response = new MSResponse<>().setFingerprint(fingerprint);
+
+        ErrorFormat format = errorsProps.format;
+        if (format == OLD || format == NEW_COMPATIBLE)
+            response.setResponseCode(httpStatusCode)
+                    .setResponseMessage(message)
+                    .setCode(errorCode)
+                    .setDetails(details);
+
+        if (format == NEW || format == NEW_COMPATIBLE) {
+            val codedMessage = new MSResponse.CodedMessage(errorCode, message, details);
+            response.setErrors(Lists.of(codedMessage));
+        }
+
+        return response;
     }
+
+    public enum ErrorFormat {OLD, NEW, NEW_COMPATIBLE}
 
     @Setter
     @Validated
@@ -158,6 +154,6 @@ public class AppExceptionHandler extends ResponseEntityExceptionHandler {
          * Whether to use the new error format? See {@link DefaultHttpErrorAttributesAdapter}.
          */
         @NotNull
-        public Boolean newFormat = false;
+        public ErrorFormat format = NEW_COMPATIBLE;
     }
 }

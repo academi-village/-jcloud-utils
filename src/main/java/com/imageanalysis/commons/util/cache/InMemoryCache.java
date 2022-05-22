@@ -1,12 +1,11 @@
 package com.imageanalysis.commons.util.cache;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -16,7 +15,7 @@ import java.util.function.Supplier;
  * @param <T> The type of cache values. For the cache to be expirable the {@link T} must implement the {@link Expirable}.
  * @author Younes Rahimi
  */
-@RequiredArgsConstructor
+@Slf4j
 public class InMemoryCache<T> implements Cache<T> {
     private final static Duration CLEAN_UP_PERIOD = Duration.ofMinutes(10);
 
@@ -41,15 +40,13 @@ public class InMemoryCache<T> implements Cache<T> {
      */
     @Override
     public T get(String key, Supplier<T> newValueSupplier) {
-        cleanUp();
         val cachedValue = get(key);
-        if (cachedValue != null && isValid(cachedValue))
+        if (cachedValue != null && isValid(cachedValue)) {
             return cachedValue;
+        }
+        log.trace("Cache miss. key: {}", key);
 
-        val newValue = Objects.requireNonNull(newValueSupplier.get());
-        cacheMap.compute(key, (k, oldValue) -> oldValue == null ? newValue : oldValue);
-
-        return newValue;
+        return cacheMap.compute(key, (k, oldValue) -> oldValue == null ? newValueSupplier.get() : oldValue);
     }
 
     /**
@@ -89,14 +86,18 @@ public class InMemoryCache<T> implements Cache<T> {
                     return;
 
                 nextCleanUp = Instant.now().plus(CLEAN_UP_PERIOD);
+                int cleaned = 0;
                 for (val entry : cacheMap.entrySet()) {
                     if (!(entry.getValue() instanceof Expirable))
                         continue;
 
                     val expirable = ((Expirable) entry.getValue());
-                    if (expirable.isExpired())
-                        cacheMap.remove(entry.getKey(), entry.getValue());
+                    if (expirable.isExpired()) {
+                        val removed = cacheMap.remove(entry.getKey(), entry.getValue());
+                        if (removed) cleaned++;
+                    }
                 }
+                log.debug("End cache cleaning up. {} entries removed from cache", cleaned);
             }
     }
 }

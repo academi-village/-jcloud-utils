@@ -1,7 +1,8 @@
 package com.imageanalysis.commons.util.java;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class Sets<E> {
@@ -15,7 +16,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of() {
-        return ImmutableCollections.emptySet();
+        return Collections.emptySet();
     }
 
     /**
@@ -29,7 +30,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1) {
-        return new ImmutableCollections.Set12<>(e1);
+        return Collections.singleton(e1);
     }
 
     /**
@@ -45,7 +46,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2) {
-        return new ImmutableCollections.Set12<>(e1, e2);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2));
     }
 
     /**
@@ -62,7 +63,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3));
     }
 
     /**
@@ -80,7 +81,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4));
     }
 
     /**
@@ -99,7 +100,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4, e5));
     }
 
     /**
@@ -119,8 +120,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
-                e6);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6));
     }
 
     /**
@@ -141,8 +141,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
-                e6, e7);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6, e7));
     }
 
     /**
@@ -164,8 +163,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
-                e6, e7, e8);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6, e7, e8));
     }
 
     /**
@@ -188,8 +186,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
-                e6, e7, e8, e9);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6, e7, e8, e9));
     }
 
     /**
@@ -213,8 +210,7 @@ public class Sets<E> {
      * @since 9
      */
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
-                e6, e7, e8, e9, e10);
+        return new LinkedHashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6, e7, e8, e9, e10));
     }
 
     /**
@@ -245,37 +241,11 @@ public class Sets<E> {
     public static <E> Set<E> of(E... elements) {
         switch (elements.length) { // implicit null check of elements
             case 0:
-                return ImmutableCollections.emptySet();
+                return Collections.emptySet();
             case 1:
-                return new ImmutableCollections.Set12<>(elements[0]);
-            case 2:
-                return new ImmutableCollections.Set12<>(elements[0], elements[1]);
+                return Collections.singleton(elements[0]);
             default:
-                return new ImmutableCollections.SetN<>(elements);
-        }
-    }
-
-    /**
-     * Returns an <a href="#unmodifiable">unmodifiable Set</a> containing the elements
-     * of the given Collection. The given Collection must not be null, and it must not
-     * contain any null elements. If the given Collection contains duplicate elements,
-     * an arbitrary element of the duplicates is preserved. If the given Collection is
-     * subsequently modified, the returned Set will not reflect such modifications.
-     *
-     * @param <E>  the {@code Set}'s element type
-     * @param coll a {@code Collection} from which elements are drawn, must be non-null
-     * @return a {@code Set} containing the elements of the given {@code Collection}
-     * @throws NullPointerException if coll is null, or if it contains any nulls
-     * @implNote If the given Collection is an <a href="#unmodifiable">unmodifiable Set</a>,
-     * calling copyOf will generally not create a copy.
-     * @since 10
-     */
-    @SuppressWarnings("unchecked")
-    public static <E> Set<E> copyOf(Collection<? extends E> coll) {
-        if (coll instanceof ImmutableCollections.AbstractImmutableSet) {
-            return (Set<E>) coll;
-        } else {
-            return (Set<E>) Sets.of(new HashSet<>(coll).toArray());
+                return new LinkedHashSet<>(Arrays.asList(elements));
         }
     }
 }

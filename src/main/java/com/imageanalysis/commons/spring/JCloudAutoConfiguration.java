@@ -13,11 +13,16 @@ import com.google.cloud.spring.core.GcpEnvironmentProvider;
 import com.google.cloud.spring.core.GcpProjectIdProvider;
 import com.google.cloud.storage.Storage;
 import com.imageanalysis.commons.errors.spring.AppExceptionHandler;
+import com.imageanalysis.commons.errors.spring.DefaultWebErrorHandler;
+import com.imageanalysis.commons.errors.spring.ErrorHandlerPostProcessor;
 import com.imageanalysis.commons.gcp.CloudStorage;
 import com.imageanalysis.commons.gcp.sdk.GcpSdk;
 import com.imageanalysis.commons.util.Jackson;
 import com.imageanalysis.commons.util.dynamikax.HttpClientConfiguration;
+import com.imageanalysis.commons.util.dynamikax.RestClient;
+import com.imageanalysis.commons.util.dynamikax.imagingproject.DefaultMsImagingProjectClient;
 import com.imageanalysis.commons.util.dynamikax.msuser.DefaultMsUserClient;
+import com.imageanalysis.commons.util.dynamikax.security.NoOpAuthorizationService;
 import com.imageanalysis.commons.util.dynamikax.security.SecurityAuditorAware;
 import com.imageanalysis.commons.util.dynamikax.security.SimpleAuthorizationService;
 import io.jsonwebtoken.JwtParser;
@@ -54,10 +59,15 @@ import java.util.function.Function;
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @Import({
         DefaultMsUserClient.class,
+        DefaultMsImagingProjectClient.class,
         AppExceptionHandler.class,
+        ErrorHandlerPostProcessor.class,
+        DefaultWebErrorHandler.class,
         HttpClientConfiguration.class,
         SimpleAuthorizationService.class,
-        SecurityAuditorAware.class
+        NoOpAuthorizationService.class,
+        SecurityAuditorAware.class,
+        RestClient.class
 })
 public class JCloudAutoConfiguration {
 
@@ -138,7 +148,7 @@ public class JCloudAutoConfiguration {
             cloudKeyFile = storage.downloadInFile(bucketName, cloudKeyStoragePath);
         } catch (Exception ex) {
             log.error("Error on fetching the public key from cloud. bucketName: {}, cloudKeyStoragePath: {} ",
-                    bucketName, cloudKeyStoragePath);
+                    bucketName, cloudKeyStoragePath, ex);
 
             // Local development server
             Assert.hasText(cloudKeyLocalPath, "The <app.cloudkey.local.path> is not set for local development. " +

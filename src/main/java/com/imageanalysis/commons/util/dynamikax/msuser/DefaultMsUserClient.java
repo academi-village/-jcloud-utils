@@ -13,7 +13,6 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -34,7 +33,7 @@ import static lombok.AccessLevel.PRIVATE;
 @Component
 @With(PRIVATE)
 @AllArgsConstructor
-@ConditionalOnMissingBean(MsUserClient.class)
+//@ConditionalOnMissingBean(MsUserClient.class)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @EnableConfigurationProperties(MsUserProperties.class)
 @ConditionalOnProperty({"msuser.email", "msuser.password"})
@@ -43,7 +42,7 @@ public class DefaultMsUserClient implements MsUserClient {
     private final MsUserProperties   props;
     private final Cache<MsUserToken> tokenCache = new InMemoryCache<>();
 
-    public RestClient restClient;
+    private RestClient restClient;
 
     @Override
     public String getJwtToken() {
@@ -65,7 +64,7 @@ public class DefaultMsUserClient implements MsUserClient {
 
     @NotNull
     private MsUserToken getMsUserToken(String email, String password) {
-        val path = "/api/user/authenticate-with-email-address-no-captcha";
+        val path = "/api/user/authenticate-with-email-address-no-captcha?compact=" + props.compactToken;
         val body = Maps.of("emailAddress", email, "password", password);
         val jwt  = restClient.noAuth().post(path).body(body).execute().asJsonNode().path("jwt").asText();
 
@@ -86,5 +85,8 @@ public class DefaultMsUserClient implements MsUserClient {
 
         @NotBlank
         private String password;
+
+        @NotNull
+        private Boolean compactToken = false;
     }
 }

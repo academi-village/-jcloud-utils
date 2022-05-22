@@ -1,6 +1,7 @@
 package com.imageanalysis.commons.util.java;
 
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class Lists<E> {
@@ -15,7 +16,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of() {
-        return ImmutableCollections.emptyList();
+        return Collections.emptyList();
     }
 
     /**
@@ -30,7 +31,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1) {
-        return new ImmutableCollections.List12<>(e1);
+        return Collections.singletonList(e1);
     }
 
     /**
@@ -46,7 +47,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2) {
-        return new ImmutableCollections.List12<>(e1, e2);
+        return Arrays.asList(e1, e2);
     }
 
     /**
@@ -63,7 +64,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3);
+        return Arrays.asList(e1, e2, e3);
     }
 
     /**
@@ -81,7 +82,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4);
+        return Arrays.asList(e1, e2, e3, e4);
     }
 
     /**
@@ -100,7 +101,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5);
+        return Arrays.asList(e1, e2, e3, e4, e5);
     }
 
     /**
@@ -120,7 +121,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+        return Arrays.asList(e1, e2, e3, e4, e5,
                 e6);
     }
 
@@ -142,7 +143,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+        return Arrays.asList(e1, e2, e3, e4, e5,
                 e6, e7);
     }
 
@@ -165,7 +166,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+        return Arrays.asList(e1, e2, e3, e4, e5,
                 e6, e7, e8);
     }
 
@@ -189,7 +190,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+        return Arrays.asList(e1, e2, e3, e4, e5,
                 e6, e7, e8, e9);
     }
 
@@ -214,7 +215,7 @@ public class Lists<E> {
      * @since 9
      */
     public static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
-        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+        return Arrays.asList(e1, e2, e3, e4, e5,
                 e6, e7, e8, e9, e10);
     }
 
@@ -245,31 +246,11 @@ public class Lists<E> {
     public static <E> List<E> of(E... elements) {
         switch (elements.length) { // implicit null check of elements
             case 0:
-                return ImmutableCollections.emptyList();
+                return Collections.emptyList();
             case 1:
-                return new ImmutableCollections.List12<>(elements[0]);
-            case 2:
-                return new ImmutableCollections.List12<>(elements[0], elements[1]);
+                return Collections.singletonList(elements[0]);
             default:
-                return new ImmutableCollections.ListN<>(elements);
+                return Arrays.asList(elements);
         }
-    }
-
-    /**
-     * Returns an <a href="#unmodifiable">unmodifiable List</a> containing the elements of
-     * the given Collection, in its iteration order. The given Collection must not be null,
-     * and it must not contain any null elements. If the given Collection is subsequently
-     * modified, the returned List will not reflect such modifications.
-     *
-     * @param <E>  the {@code List}'s element type
-     * @param coll a {@code Collection} from which elements are drawn, must be non-null
-     * @return a {@code List} containing the elements of the given {@code Collection}
-     * @throws NullPointerException if coll is null, or if it contains any nulls
-     * @implNote If the given Collection is an <a href="#unmodifiable">unmodifiable List</a>,
-     * calling copyOf will generally not create a copy.
-     * @since 10
-     */
-    public static <E> List<E> copyOf(Collection<? extends E> coll) {
-        return ImmutableCollections.listCopy(coll);
     }
 }

@@ -4,9 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import me.alidg.errors.HttpError;
 import me.alidg.errors.WebErrorHandlerPostProcessor;
-import me.alidg.errors.conf.ErrorsAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.ServletWebRequest;
 
@@ -19,8 +16,6 @@ import static com.imageanalysis.commons.errors.spring.AppExceptionHandler.SERVER
  */
 @Slf4j
 @Component
-@ConditionalOnBean(ErrorsAutoConfiguration.class)
-@ConditionalOnProperty(value = "errors.enable-alidg-lib", havingValue = "true")
 public class ErrorHandlerPostProcessor implements WebErrorHandlerPostProcessor {
 
     /**

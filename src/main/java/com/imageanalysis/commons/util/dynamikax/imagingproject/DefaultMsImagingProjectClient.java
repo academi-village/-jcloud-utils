@@ -13,7 +13,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -29,7 +28,7 @@ import static com.imageanalysis.commons.errors.ProjectError.ENDPOINT_ID_NOT_FOUN
 
 @Slf4j
 @Component
-@ConditionalOnMissingBean(MsImagingProjectClient.class)
+//@ConditionalOnMissingBean(MsImagingProjectClient.class)
 public class DefaultMsImagingProjectClient implements MsImagingProjectClient {
     private static final Duration LONG_EXPIRATION = Duration.ofDays(7);
 

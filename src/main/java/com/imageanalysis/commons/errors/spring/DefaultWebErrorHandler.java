@@ -2,8 +2,6 @@ package com.imageanalysis.commons.errors.spring;
 
 import me.alidg.errors.HandledException;
 import me.alidg.errors.WebErrorHandler;
-import me.alidg.errors.conf.ErrorsAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -20,7 +18,6 @@ import static com.imageanalysis.commons.errors.spring.AppExceptionHandler.SERVER
  * @see WebErrorHandler
  */
 @Component("defaultWebErrorHandler")
-@ConditionalOnBean({ErrorsAutoConfiguration.class, ErrorHandlerPostProcessor.class})
 public class DefaultWebErrorHandler implements WebErrorHandler {
 
     /**
