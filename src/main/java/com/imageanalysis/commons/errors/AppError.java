@@ -31,7 +31,7 @@ public interface AppError {
 
     /**
      * Encapsulates the more specific details of the error.
-     * Typically, contains the gateway service response or the exception message.
+     * Typically, contains the gateway service response or the exception message or exception stack trace on development mode.
      */
     @Nullable
     default Object getDetails() {
@@ -41,7 +41,7 @@ public interface AppError {
     default AppError details(@Nullable Object details) {
         val params = this instanceof ParameterizedError ? ((ParameterizedError) this).getParams() : null;
 
-        return new ParameterizedError(getCode(), getMessage(), getHttpStatusCode(), details, params);
+        return new ParameterizedError(getCode(), getMessage(), getHttpStatusCode(), details, (Object[]) params);
     }
 
     /**

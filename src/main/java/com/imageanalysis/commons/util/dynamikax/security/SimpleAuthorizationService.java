@@ -99,7 +99,7 @@ public class SimpleAuthorizationService implements AuthorizationService {
         } catch (NumberFormatException e) {
             log.error("Can't convert user ID to a long number", e);
 
-            throw new AppException(USER_NOT_AUTHENTICATED);
+            throw new AppException(USER_NOT_AUTHENTICATED, e);
         }
 
         return new User(userId, claims.getSubject());
@@ -123,7 +123,7 @@ public class SimpleAuthorizationService implements AuthorizationService {
                 throw ex;
 
             log.warn("Can't parse JWT token: {}", ex.getMessage());
-            throw new AppException(USER_NOT_AUTHENTICATED);
+            throw new AppException(USER_NOT_AUTHENTICATED, ex);
         }
     }
 

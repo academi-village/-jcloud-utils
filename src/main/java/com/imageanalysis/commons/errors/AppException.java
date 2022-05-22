@@ -28,4 +28,16 @@ public class AppException extends RuntimeException {
     public AppException(AppError error, Object... params) {
         this(new ParameterizedError(error, params));
     }
+
+    /**
+     * @param params Used to interpolate the error message.
+     */
+    public AppException(AppError error, Exception ex, Object... params) {
+        this(new ParameterizedError(error, params), ex);
+    }
+
+    public AppException(AppError error, Exception ex) {
+        super(error.getMessage(), ex);
+        this.error = error;
+    }
 }

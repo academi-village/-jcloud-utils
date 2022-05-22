@@ -2,11 +2,17 @@ package com.imageanalysis.commons.util;
 
 import com.imageanalysis.commons.errors.AppError;
 import com.imageanalysis.commons.errors.AppException;
+import lombok.NonNull;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class ExceptionUtil {
 
     public static <T> T TODO() {throw new TodoException();}
+
+    public static String messageWithStackTrace(@NonNull Throwable ex) {
+        return ex.getMessage() + "\n" + ExceptionUtils.getStackTrace(ex);
+    }
 
     @SneakyThrows
     public static <T> T rethrow(Throwable throwable) {throw throwable;}

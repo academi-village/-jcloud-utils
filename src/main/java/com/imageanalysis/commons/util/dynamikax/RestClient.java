@@ -42,6 +42,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.imageanalysis.commons.errors.ProjectError.REMOTE_SERVICE_FAILED;
+import static com.imageanalysis.commons.util.ExceptionUtil.messageWithStackTrace;
 import static java.net.HttpURLConnection.*;
 import static java.util.Objects.requireNonNull;
 import static lombok.AccessLevel.PRIVATE;
@@ -341,9 +343,9 @@ public class RestClient {
             return response;
         } catch (RestClientException ex) {
             log.error("Calling remote service failed. Request: {}", requestSignature, ex);
-            val details = Maps.of("request", requestSignature, "exception", ex.getMessage());
+            val details = Maps.of("request", requestSignature, "exception", toString(ex));
 
-            throw new AppException(ProjectError.REMOTE_SERVICE_FAILED.details(details));
+            throw new AppException(REMOTE_SERVICE_FAILED.details(details), ex);
         }
     }
 
@@ -611,7 +613,7 @@ public class RestClient {
         Object details = Maps.of("request", requestSignature, "response", response);
         val    body    = response.getBody();
         if (body == null || !body.isObject())
-            return ProjectError.REMOTE_SERVICE_FAILED.details(details);
+            return REMOTE_SERVICE_FAILED.details(details);
 
         if (body.has("httpStatusCode"))
             return jackson.convertValue(body, GatewayError.class);
@@ -632,7 +634,7 @@ public class RestClient {
             return new GatewayError(errorCode, message, httpStatusCode).details(details);
         }
 
-        return ProjectError.REMOTE_SERVICE_FAILED.details(details);
+        return REMOTE_SERVICE_FAILED.details(details);
     }
 
     @FunctionalInterface
@@ -813,5 +815,10 @@ public class RestClient {
     @NotNull
     private String getAuthorizationValue() {
         return "Bearer " + msUserClient.getJwtToken();
+    }
+
+    @NotNull
+    private String toString(RestClientException ex) {
+        return activeProfile != Profile.PROD ? messageWithStackTrace(ex) : ex.toString();
     }
 }

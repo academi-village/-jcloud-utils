@@ -27,6 +27,12 @@ public class MSResponse<T> {
     @Nullable
     public String errorCode;
 
+    @Nullable
+    public String fingerprint;
+
+    @Nullable
+    public Object details;
+
     /**
      * If the response code is not 200 (OK) throws an exception.
      */

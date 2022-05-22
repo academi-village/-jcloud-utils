@@ -5,7 +5,6 @@ import com.google.auth.Credentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.SignUrlOption;
-import com.imageanalysis.commons.errors.AppException;
 import com.imageanalysis.commons.errors.ProjectError;
 import com.imageanalysis.commons.gcp.CloudMetadata;
 import com.imageanalysis.commons.gcp.CloudStorage;
@@ -203,6 +202,6 @@ public class GcpSdk implements CloudMetadata, CloudStorage {
         return StreamSupport.stream(blobs.iterateAll().spliterator(), false)
                 .filter(it -> predicate.test(getFileNameFromUrl(it.getBlobId().getName())))
                 .findFirst()
-                .orElseThrow(() -> new AppException(ProjectError.FILE_NOT_FOUND));
+                .orElseThrow(ProjectError.FILE_NOT_FOUND::ex);
     }
 }
