@@ -39,9 +39,9 @@ public class SimpleAuthorizationService implements AuthorizationService {
     }
 
     @Override
-    public void checkAccess(Permission... permissions) {
+    public void checkAccess(Permission... globalPermissions) {
         val globals     = (List<String>) extractPermissions(getClaims()).get(VeryCompactJwtPermissions.GLOBALS);
-        val hasNoAccess = Arrays.stream(permissions).map(Permission::getName).noneMatch(globals::contains);
+        val hasNoAccess = Arrays.stream(globalPermissions).map(Permission::getName).noneMatch(globals::contains);
         if (!hasNoAccess)
             throw new AppException(ACCESS_DENIED);
     }

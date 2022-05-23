@@ -23,7 +23,7 @@ public class NoOpAuthorizationService extends SimpleAuthorizationService {
     }
 
     @Override
-    public void checkAccess(Permission... permissions) {
+    public void checkAccess(Permission... globalPermissions) {
     }
 
     @Override
