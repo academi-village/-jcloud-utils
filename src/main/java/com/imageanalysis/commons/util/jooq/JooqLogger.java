@@ -1,6 +1,7 @@
 package com.imageanalysis.commons.util.jooq;
 
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * The jOOQ logger abstraction.
@@ -49,6 +50,40 @@ public final class JooqLogger implements Log {
      * Whether calls to {@link #info(Object)} are possible.
      */
     private boolean supportsInfo = true;
+
+    /**
+     * Get a logger wrapper for a class.
+     */
+    public static JooqLogger newLogger(Logger logger) {
+        JooqLogger result = new JooqLogger();
+
+        // Prioritise slf4j
+        result.slf4j = logger;
+
+        // [#2085] Check if any of the INFO, DEBUG, TRACE levels might be
+        // unavailable, e.g. because client code isn't using the latest version
+        // of log4j or any other logger
+
+        try {
+            result.isInfoEnabled();
+        } catch (Throwable e) {
+            result.supportsInfo = false;
+        }
+
+        try {
+            result.isDebugEnabled();
+        } catch (Throwable e) {
+            result.supportsDebug = false;
+        }
+
+        try {
+            result.isTraceEnabled();
+        } catch (Throwable e) {
+            result.supportsTrace = false;
+        }
+
+        return result;
+    }
 
     /**
      * Get a logger wrapper for a class.

@@ -8,6 +8,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+/**
+ * @deprecated Don't use this if possible. This would be deleted later.
+ */
 @Slf4j
 @Getter
 @Setter

@@ -1,19 +1,32 @@
 package com.imageanalysis.commons.util.jooq;
 
+import org.slf4j.Logger;
+
 /**
  * A time measuring device
  */
 public final class StopWatch {
-    private static final JooqLogger log = JooqLogger.getLogger(StopWatch.class);
+    private static final JooqLogger LOG = JooqLogger.getLogger(StopWatch.class);
 
-    private final long start;
-    private       long split;
+    private final long       start;
+    private final JooqLogger log;
+    private       long       split;
 
     /**
      * Initialise the stop watch
      */
-    public StopWatch() {
+   /* public StopWatch() {
         this.start = System.nanoTime();
+        this.log   = LOG;
+        this.split = start;
+    } */
+
+    /**
+     * Initialise the stop watch
+     */
+    public StopWatch(Logger logger) {
+        this.start = System.nanoTime();
+        this.log   = JooqLogger.newLogger(logger);
         this.split = start;
     }
 

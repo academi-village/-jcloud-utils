@@ -308,56 +308,6 @@ public class RestClient {
         return this.withMicroservice(microservice);
     }
 
-    private boolean isCacheEnabled() {
-        //noinspection ConstantConditions
-        return expiration != null;
-    }
-
-    private ResponseEntity<JsonNode> request(HttpMethod httpMethod,
-                                             String url,
-                                             HttpHeaders headers,
-                                             @Nullable Object body,
-                                             String cacheKey) {
-        //noinspection ConstantConditions
-        if (!isCacheEnabled())
-            return doRequest(httpMethod, url, headers, body);
-
-        Supplier<ExpirableValue<Object>> supplier = () -> toExpirable(doRequest(httpMethod, url, headers, body));
-
-        //noinspection unchecked
-        return (ResponseEntity<JsonNode>) cache.get(cacheKey, supplier).value;
-    }
-
-    private ResponseEntity<JsonNode> doRequest(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
-        val    stopWatch        = new StopWatch();
-        String requestSignature = getRequestSignature(httpMethod, url, headers, body);
-        requestSignature = PASSWORD_PATTER.matcher(requestSignature).replaceFirst("\"password\":\"*****\"");
-        try {
-            val entity   = getHttpEntity(httpMethod, url, headers, body);
-            val response = restTemplate.exchange(url, httpMethod, entity, JsonNode.class);
-
-            val infoLog = String.format("Remote request executed: %s \nResponse: %s", requestSignature, response);
-            stopWatch.splitInfo(infoLog);
-
-            int statusCode = response.getStatusCodeValue();
-            boolean failed = statusCode < 200
-                             || statusCode > 299
-                             || statusCode != HTTP_NO_CONTENT && statusCode != HTTP_CREATED && response.getBody() == null;
-
-            if (failed) {
-                log.error("Calling remote service failed. Request: {} \nResponse: {}", requestSignature, response);
-                throw new AppException(toAppError(requestSignature, response));
-            }
-
-            return response;
-        } catch (RestClientException ex) {
-            log.error("Calling remote service failed. Request: {}", requestSignature, ex);
-            val details = Maps.of("request", requestSignature, "exception", toString(ex));
-
-            throw new AppException(REMOTE_SERVICE_FAILED.details(details), ex);
-        }
-    }
-
     /**
      * Creates a new clone of the current client with the customized authorization value provider.
      * The provided values would be cached to improve performance.
@@ -389,6 +339,56 @@ public class RestClient {
                 .withAuthorizationProvider(() -> authorizationProvider.apply(this.noAuth()))
                 .withCacheKeyProvider((AuthorizationKeyProvider<Object>) cacheKeyProvider)
                 .withAuthorizationType(AuthorizationType.CUSTOM);
+    }
+
+    private boolean isCacheEnabled() {
+        //noinspection ConstantConditions
+        return expiration != null;
+    }
+
+    private ResponseEntity<JsonNode> request(HttpMethod httpMethod,
+                                             String url,
+                                             HttpHeaders headers,
+                                             @Nullable Object body,
+                                             String cacheKey) {
+        //noinspection ConstantConditions
+        if (!isCacheEnabled())
+            return doRequest(httpMethod, url, headers, body);
+
+        Supplier<ExpirableValue<Object>> supplier = () -> toExpirable(doRequest(httpMethod, url, headers, body));
+
+        //noinspection unchecked
+        return (ResponseEntity<JsonNode>) cache.get(cacheKey, supplier).value;
+    }
+
+    private ResponseEntity<JsonNode> doRequest(HttpMethod httpMethod, String url, HttpHeaders headers, @Nullable Object body) {
+        val    stopWatch        = new StopWatch(log);
+        String requestSignature = getRequestSignature(httpMethod, url, headers, body);
+        requestSignature = PASSWORD_PATTER.matcher(requestSignature).replaceFirst("\"password\":\"*****\"");
+        try {
+            val entity   = getHttpEntity(httpMethod, url, headers, body);
+            val response = restTemplate.exchange(url, httpMethod, entity, JsonNode.class);
+
+            val infoLog = String.format("Remote request executed: %s \nResponse: %s", requestSignature, response);
+            stopWatch.splitInfo(infoLog);
+
+            int statusCode = response.getStatusCodeValue();
+            boolean failed = statusCode < 200
+                             || statusCode > 299
+                             || statusCode != HTTP_NO_CONTENT && statusCode != HTTP_CREATED && response.getBody() == null;
+
+            if (failed) {
+                log.error("Calling remote service failed. Request: {} \nResponse: {}", requestSignature, response);
+                throw new AppException(toAppError(requestSignature, response));
+            }
+
+            return response;
+        } catch (RestClientException ex) {
+            log.error("Calling remote service failed. Request: {}", requestSignature, ex);
+            val details = Maps.of("request", requestSignature, "exception", toString(ex));
+
+            throw new AppException(REMOTE_SERVICE_FAILED.details(details), ex);
+        }
     }
 
     @NotNull
