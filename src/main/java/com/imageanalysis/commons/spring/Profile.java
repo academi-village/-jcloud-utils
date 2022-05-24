@@ -43,7 +43,7 @@ public enum Profile {
     private final String projectId;
 
     /**
-     * Represents the branch name in Git repository.
+     * Represents the app-engine micro-service base url prefix.
      */
     private final String baseUrlPrefix;
 
@@ -89,22 +89,22 @@ public enum Profile {
     }
 
     public String getBranchName() {
-        return env == null ? branchName : env.getProperty("profile.branch-name", branchName);
+        return env == null ? branchName : env.getProperty("app.profile.branch-name", branchName);
     }
 
     public String getProjectId() {
-        return env == null ? projectId : env.getProperty("profile.project-id", projectId);
+        return env == null ? projectId : env.getProperty("app.profile.project-id", projectId);
     }
 
     public String getBaseUrlPrefix() {
-        return env == null ? baseUrlPrefix : env.getProperty("profile.base-url-prefix", baseUrlPrefix);
+        return env == null ? baseUrlPrefix : env.getProperty("app.profile.base-url-prefix", baseUrlPrefix);
     }
 
     public String getStorageBucketName() {
-        return env == null ? storageBucketName : env.getProperty("profile.storage-bucket-name", storageBucketName);
+        return env == null ? storageBucketName : env.getProperty("app.profile.storage-bucket-name", storageBucketName);
     }
 
     public String getDefaultUsername() {
-        return env == null ? defaultUsername : env.getProperty("profile.default-username", defaultUsername);
+        return env == null ? defaultUsername : env.getProperty("app.profile.default-username", defaultUsername);
     }
 }

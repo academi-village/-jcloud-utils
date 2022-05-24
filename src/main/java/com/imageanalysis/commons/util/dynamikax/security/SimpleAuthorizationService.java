@@ -24,7 +24,7 @@ import static com.imageanalysis.commons.errors.ProjectError.USER_NOT_AUTHENTICAT
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = "authorization.enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "app.authorization.enable", havingValue = "true", matchIfMissing = true)
 public class SimpleAuthorizationService implements AuthorizationService {
 
     private static final String BEARER      = "Bearer ";

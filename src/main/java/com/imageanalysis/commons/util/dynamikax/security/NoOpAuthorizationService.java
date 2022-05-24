@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(value = "authorization.enable", havingValue = "false")
+@ConditionalOnProperty(value = "app.authorization.enable", havingValue = "false")
 public class NoOpAuthorizationService extends SimpleAuthorizationService {
 
     private final User fakeUser = new User(0L, "__fake_user__");
